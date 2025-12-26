@@ -1,0 +1,9 @@
+*.tgz
+*.lock
+*.tar
+*.gz
+*.zip
+**/charts
+**/charts/*
+!.helmignore
+!.helmchart

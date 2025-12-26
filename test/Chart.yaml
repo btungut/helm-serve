@@ -1,0 +1,11 @@
+apiVersion: v2
+name: testing-api
+description: testing-api
+type: application
+appVersion: ""
+version: 0.0.0
+
+dependencies:
+  - name: helm-serve
+    repository: file://../chart
+    version: ">=0.0.0-0"

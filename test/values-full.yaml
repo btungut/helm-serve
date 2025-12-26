@@ -1,0 +1,142 @@
+nameOverride: ""
+fullnameOverride: ""
+
+### You can define shared values here to be used across multiple sub-charts
+shared:
+  imagePullSecretName: "our-common-pull-secret-name"
+  someOtherSharedValue: "shared-value-123"
+
+### You can define a custom template prefix to be used in all templates
+### If not defined, the chart name will be used as the prefix
+templatePrefix: "overriden-tpl-prefix"
+
+### Values for the deployment template, it cannot be disabled
+deployment:
+
+  ### Number of desired pods 
+  replicaCount: 2
+
+  ### Port to be exposed by the container
+  containerPort: 80
+  
+  ### Pod termination grace period in seconds
+  terminationGracePeriodSeconds: 12
+
+  ### Revision history limit for the deployment
+  revisionHistoryLimit: 1 # default is 0 in the base chart for gitops compatibility
+  
+  ### Image pull secrets for the deployment pods
+  imagePullSecrets:
+    - name: "{{ .Values.shared.imagePullSecretName }}"
+  
+  ### Container image settings
+  image:
+    repository: myrepo
+    tag: latest
+
+  ### Custom labels for deployment metadata
+  labels:
+    buraktungut.com/custom-deployment-label: "Visit github.com/btungut"
+
+  ### Custom annotations for POD metadata
+  podAnnotations:
+    buraktungut.com/custom-pod-annotation: "Hello from annotation"
+
+  ### ConfigMap contents can be passed to pods as shown below, please pay attention to the `required` fields
+  ### In this scenerio, if `my-configmap` is not found, the pod will not start
+  configMaps:
+    - name: my-configmap
+      required: true
+    - name: another-configmap
+      required: false
+
+  ### Secrets can be passed to pods as shown below, please pay attention to the `required` fields
+  ### In this scenerio, if `my-secret` is not found, the pod will not start
+  secrets:
+    - name: my-secret
+      required: true
+    - name: another-secret
+      required: false
+
+  ### Custom environment variables for the container
+  ### You can use template syntax to reference other values
+  env:
+    hello: world123
+    env_from_shared_value: "{{ .Values.shared.someOtherSharedValue }}"
+    env_from_helm_context: "{{ .Release.Name }}-{{ .Release.Namespace }}"
+
+
+  ### Resource requests and limits for the container
+  ### If not specified, 200m CPU and 256Mi memory requests/limits will be set by default to protect the cluster
+  resources: {}
+  
+
+
+  ### You can specify custom probes for the container, otherwise no probes will be set
+  startupProbe: 
+    httpGet:
+      path: /overriden/url
+      port: "app" ### `app` is the default name of container name and container port!
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    failureThreshold: 6
+    successThreshold: 1
+    timeoutSeconds: 1
+
+
+  livenessProbe: {}
+  readinessProbe: {}
+
+
+
+### Service settings, can be disabled
+service:
+
+  ### Enable or disable the service creation
+  enabled: true
+
+  ### Custom name for the service
+  ### ONLY OVERRIDE IF YOU KNOW WHAT YOU ARE DOING
+  name: "custom-service-name"
+
+  ### Custom labels for service metadata
+  labels:
+    buraktungut.com/custom-service-label: "ServiceLabelValue"
+
+  ### Service type, can be ClusterIP, NodePort, LoadBalancer, etc.
+  type: NodePort
+
+  ### Service port to be exposed, a.k.a. outbound port
+  port: 80
+
+  ### NodePort value, only required if service type is NodePort
+  nodePort: 31999
+
+
+### Ingress settings, can be disabled
+ingress:
+
+  ### Enable or disable the ingress creation
+  enabled: true
+
+  ### Ingress controller class name
+  className: "nginx"
+
+  ### Custom name for the ingress
+  ### ONLY OVERRIDE IF YOU KNOW WHAT YOU ARE DOING
+  name: "custom-ingress-name"
+
+  ### Custom labels for ingress metadata
+  labels:
+    buraktungut.com/custom-ingress-label: "IngressLabelValue"
+
+  ### Custom annotations for ingress metadata
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  
+  ### Rule settings for the ingress, only one rule is supported in this base chart
+  rule:
+    host: "mycompany.local"
+    path: /myapp(/|$)(.*)
+    ### You do not need to specify the service name and port here, they will be set automatically

@@ -1,0 +1,31 @@
+apiVersion: v2
+name: helm-serve
+description: Helm base chart for serving API and web applications with minimal configuration. Designed to eliminate boilerplate and simplify Kubernetes deployments.
+type: library
+home: https://github.com/btungut/helm-serve
+
+keywords:
+  - kubernetes
+  - helm
+  - api
+  - web
+  - serve
+  - deployment
+  - microservice
+  - boilerplate
+  - minimal
+
+
+maintainers:
+  - name: Burak Tungut
+    url: https://github.com/btungut
+    
+
+sources:
+  - https://github.com/btungut/helm-serve
+
+deprecated: false
+
+### Following fields are being updated by Git Actions
+appVersion: ""
+version: 0.0.0
