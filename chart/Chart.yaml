@@ -26,6 +26,5 @@ sources:
 
 deprecated: false
 
-### Following fields are being updated by Git Actions
 appVersion: ""
-version: 0.0.0
+version: 0.0.1

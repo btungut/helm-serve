@@ -1,38 +1,17 @@
 nameOverride: ""
 fullnameOverride: ""
 
-shared:
-  imagePullSecretName: "our-common-pull-secret-name"
-
 deployment:
-  replicaCount: 2
   containerPort: 80
-  terminationGracePeriodSeconds: 12
-  
-  imagePullSecrets:
-    - name: "{{ .Values.shared.imagePullSecretName }}"
   
   image:
     repository: myrepo
     tag: latest
 
-  configMaps:
-    - name: app-env
-      required: true
-
-  secrets:
-    - name: app-secrets
-      required: true
-
-  env:
-    ASPNETCORE_ENVIRONMENT: "Production"
-
 
 service:
   enabled: true
-  type: NodePort
   port: 80
-  nodePort: 31999
 
 
 ingress:
