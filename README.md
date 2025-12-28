@@ -20,23 +20,26 @@
 
 Since this is a **Library Chart**, it is not meant to be installed directly (`helm install`). Instead, add it as a dependency to your application chart.
 
-1.  Add the repository (example):
-    ```bash
-    helm repo add btungut https://btungut.github.io
-    ```
+1. Add it to your application's `Chart.yaml`:
 
-2.  Add it to your application's `Chart.yaml`:
-    ```yaml
-    dependencies:
-      - name: helm-serve
-        version: "0.0.1"
-        repository: "https://btungut.github.io"
-    ```
+```yaml
+dependencies:
+  - name: helm-serve
+    repository: oci://ghcr.io/btungut
+    version: 0.0.1
+```
 
-3.  Update dependencies:
-    ```bash
-    helm dependency update
-    ```
+2. Update dependencies:
+
+```bash
+helm dependency update
+```
+
+2.a. Clean your `charts/` directory if needed:
+
+```bash
+rm -rf charts/ && helm dependency update .
+```
 
 ## ⚡ Quick Start
 
