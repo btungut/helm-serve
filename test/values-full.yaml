@@ -5,6 +5,7 @@ fullnameOverride: ""
 shared:
   imagePullSecretName: "our-common-pull-secret-name"
   someOtherSharedValue: "shared-value-123"
+  valueForPort: "3032"
 
 ### You can define a custom template prefix to be used in all templates
 ### If not defined, the chart name will be used as the prefix
@@ -17,7 +18,7 @@ deployment:
   replicaCount: 2
 
   ### Port to be exposed by the container
-  containerPort: 80
+  containerPort: "{{ .Values.shared.valueForPort }}"
   
   ### Pod termination grace period in seconds
   terminationGracePeriodSeconds: 12
@@ -64,6 +65,7 @@ deployment:
     hello: world123
     env_from_shared_value: "{{ .Values.shared.someOtherSharedValue }}"
     env_from_helm_context: "{{ .Release.Name }}-{{ .Release.Namespace }}"
+    APP_PORT: "{{ .Values.shared.valueForPort }}"
 
 
   ### Resource requests and limits for the container

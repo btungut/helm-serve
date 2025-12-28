@@ -94,7 +94,15 @@ spec:
           {{- if hasKey $cnt "containerPort" }}
           ports:
             - name: app
-              containerPort: {{ $cnt.containerPort | required "containerPort is required" }}
+              {{- if not $cnt.containerPort }}
+              {{- fail "containerPort is required and cannot be empty" }}
+              {{- else if kindIs "float64" $cnt.containerPort }}
+              containerPort: {{ $cnt.containerPort }}
+              {{- else if kindIs "string" $cnt.containerPort }}
+              containerPort: {{ tpl $cnt.containerPort $ }}
+              {{- else }}
+              {{- fail (printf "containerPort must be a number or string, got %s" (kindOf $cnt.containerPort)) }}
+              {{- end }}
               protocol: TCP
           {{- end }}
           {{- with $cnt.startupProbe }}
