@@ -91,18 +91,18 @@ You can find example `values.yaml` files demonstrating various configurations in
 
 ### values-basic.yaml
 
-Basic application deployment with minimal configuration.<br />
+Minimal configuration with just deployment, service, and ingress basics.<br />
 Visit [test/values-basic.yaml](test/values-basic.yaml) for details.
 
 ### values-middle.yaml
 
-Intermediate configuration with additional features like probes and resource limits.<br />
+Intermediate configuration with shared values, ConfigMaps, Secrets, NodePort service, and environment variables.<br />
 Visit [test/values-middle.yaml](test/values-middle.yaml) for details.
 
-### values-advanced.yaml
+### values-full.yaml
 
-Advanced configuration showcasing all features including ConfigMaps, Secrets, and custom labels.<br />
-Visit [test/values-advanced.yaml](test/values-advanced.yaml) for details.
+Comprehensive configuration showcasing all features including custom labels, annotations, probes, template prefix override, and dynamic value injection via `tpl`.<br />
+Visit [test/values-full.yaml](test/values-full.yaml) for details.
 
 
 ## ⚙️ Configuration Reference
@@ -181,6 +181,25 @@ The chart automatically injects the following environment variables into the con
 * `HELM_Namespace`: The release namespace.
 * `K8S_Namespace`: The actual Kubernetes namespace (via Downward API).
 
-## 📄 License
+# License
 
-This project is licensed under the **Apache License 2.0** - see the [LICENSE](LICENSE) file for details.
+This project is released under the **Lexis Non-Commercial Source License (NCSL) v1.0**.
+
+### You are allowed to
+
+- Pull and run the official Docker image
+- Use the software for personal, educational, or internal evaluation purposes
+- Clone, modify, and build your own Docker images
+- Self-host the software for non-commercial use only
+
+### You are NOT allowed to
+
+- Use this software in any commercial or revenue-generating product or service
+- Offer the software as part of a paid platform or subscription
+- Provide the software as a hosted or managed service (SaaS)
+- Monetize the software directly or indirectly
+- Sell access to the software or its functionality
+
+Commercial use requires a separate commercial license.
+
+For commercial licensing inquiries, contact: **[burak.tungut@tungops.com.tr](mailto:burak.tungut@tungops.com.tr)**

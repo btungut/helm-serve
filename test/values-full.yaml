@@ -141,4 +141,5 @@ ingress:
   rule:
     host: "mycompany.local"
     path: /myapp(/|$)(.*)
+    pathType: ImplementationSpecific
     ### You do not need to specify the service name and port here, they will be set automatically
