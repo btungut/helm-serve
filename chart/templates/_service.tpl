@@ -10,6 +10,8 @@
 {{- end }}
 
 {{- define "library.service" }}
+{{- $chartType := index .Chart.Annotations "buraktungut.com/chart-type" | default "" }}
+{{- if or (eq $chartType "") (eq $chartType "deployment") }}
 {{- if (hasKey .Values "service") }}
 {{- $svc := .Values.service }}
 {{- if $svc.enabled }}
@@ -18,7 +20,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "library.service.name" $ }}
-  labels: 
+  labels:
     {{- include "library.service.labels" $ | nindent 4 }}
 spec:
   type: {{ $svc.type | default "ClusterIP" }}
@@ -31,6 +33,7 @@ spec:
       {{- end }}
   selector:
     {{- include (printf "%s.selectorLabels" $templatePrefix) $ | nindent 4 }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
