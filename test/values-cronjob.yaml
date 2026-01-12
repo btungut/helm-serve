@@ -1,7 +1,7 @@
 ### Example configuration for CronJob mode (Scheduled/Batch jobs)
 ### To enable this mode, add to your Chart.yaml:
 ###   annotations:
-###     "buraktungut.com/chart-type": "job"
+###     "buraktungut.com/chart-type": "cronjob"
 ### For Deployment mode (API/Web apps), see values-basic.yaml, values-middle.yaml, or values-full.yaml
 
 nameOverride: ""

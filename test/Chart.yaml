@@ -7,9 +7,9 @@ version: 0.0.0
 
 ### To enable CronJob rendering, uncomment the annotation below
 # annotations:
-#   "buraktungut.com/chart-type": "job"
+#   "buraktungut.com/chart-type": "cronjob"
 
-### To enable Deployment rendering, uncomment the annotation below
+## To enable Deployment rendering, uncomment the annotation below
 # annotations:
 #   "buraktungut.com/chart-type": "deployment"
 
