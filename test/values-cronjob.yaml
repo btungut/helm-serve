@@ -26,6 +26,10 @@ cronJob:
   ### Suspend the CronJob (useful for temporary disable)
   suspend: false
 
+  ### Deadline in seconds for starting the job if it misses scheduled time
+  ### If not set, jobs have no deadline and can start anytime
+  startingDeadlineSeconds: 200
+
   ### Number of retries before considering a Job as failed
   backoffLimit: 3
 

@@ -214,6 +214,7 @@ The following table lists the configurable parameters of the `helm-serve` chart 
 | `cronJob.successfulJobsHistoryLimit` | Number of successful jobs to keep. | `nil` |
 | `cronJob.failedJobsHistoryLimit` | Number of failed jobs to keep. | `nil` |
 | `cronJob.suspend` | Suspend the CronJob (true/false). | `nil` |
+| `cronJob.startingDeadlineSeconds` | Deadline in seconds for starting the job if it misses scheduled time. | `nil` |
 | `cronJob.backoffLimit` | Number of retries before marking job as failed. | `nil` |
 | `cronJob.activeDeadlineSeconds` | Job timeout in seconds. | `nil` |
 | `cronJob.ttlSecondsAfterFinished` | Clean up finished jobs after this duration. | `nil` |

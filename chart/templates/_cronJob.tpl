@@ -48,6 +48,9 @@ spec:
   {{- with $job.suspend }}
   suspend: {{ . }}
   {{- end }}
+  {{- with $job.startingDeadlineSeconds }}
+  startingDeadlineSeconds: {{ . }}
+  {{- end }}
   jobTemplate:
     metadata:
       labels:
