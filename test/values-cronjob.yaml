@@ -1,0 +1,81 @@
+### Example configuration for CronJob mode (Scheduled/Batch jobs)
+### To enable this mode, add to your Chart.yaml:
+###   annotations:
+###     "buraktungut.com/chart-type": "job"
+### For Deployment mode (API/Web apps), see values-basic.yaml, values-middle.yaml, or values-full.yaml
+
+nameOverride: ""
+fullnameOverride: ""
+
+### Values for the CronJob template
+cronJob:
+
+  ### Cron schedule expression (required)
+  ### Examples: "*/5 * * * *" (every 5 minutes), "0 2 * * *" (daily at 2am)
+  schedule: "*/5 * * * *"
+
+  ### Concurrency policy: Allow, Forbid, or Replace
+  concurrencyPolicy: "Forbid"
+
+  ### Number of successful job history to keep
+  successfulJobsHistoryLimit: 3
+
+  ### Number of failed job history to keep
+  failedJobsHistoryLimit: 1
+
+  ### Suspend the CronJob (useful for temporary disable)
+  suspend: false
+
+  ### Number of retries before considering a Job as failed
+  backoffLimit: 3
+
+  ### Job timeout in seconds
+  activeDeadlineSeconds: 600
+
+  ### Clean up finished jobs after this many seconds
+  ttlSecondsAfterFinished: 86400
+
+  ### Restart policy for the job pods: OnFailure or Never
+  restartPolicy: "OnFailure"
+
+  ### Image pull secrets for the job pods
+  imagePullSecrets:
+    - name: "my-pull-secret"
+
+  ### Container image settings
+  image:
+    repository: myrepo/my-cronjob
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  ### Custom labels for CronJob metadata
+  labels:
+    buraktungut.com/custom-cronjob-label: "CronJobLabelValue"
+
+  ### Custom annotations for POD metadata
+  podAnnotations:
+    buraktungut.com/custom-pod-annotation: "Hello from CronJob"
+
+  ### ConfigMap contents can be passed to pods
+  configMaps:
+    - name: my-configmap
+      required: true
+
+  ### Secrets can be passed to pods
+  secrets:
+    - name: my-secret
+      required: true
+
+  ### Custom environment variables for the container
+  env:
+    JOB_TYPE: "scheduled-task"
+    LOG_LEVEL: "info"
+
+  ### Resource requests and limits for the container
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi

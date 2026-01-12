@@ -4,13 +4,14 @@
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-%3E%3D%201.19-326ce5.svg)](https://kubernetes.io/)
 [![Helm](https://img.shields.io/badge/Helm-v3-orange.svg)](https://helm.sh/)
 
-**Bootstrap stateless Web & API workloads in seconds.**
+**Bootstrap stateless Web & API workloads and scheduled jobs in seconds.**
 
-`helm-serve` is a DRY (Don't Repeat Yourself) **Helm Library Chart** designed to act as a standardized foundation for microservices. It abstracts away the complexity of defining repetitive `Deployment`, `Service`, and `Ingress` manifests, allowing developers to focus on configuration rather than boilerplate YAML.
+`helm-serve` is a DRY (Don't Repeat Yourself) **Helm Library Chart** designed to act as a standardized foundation for microservices and scheduled tasks. It abstracts away the complexity of defining repetitive `Deployment`, `Service`, `Ingress`, and `CronJob` manifests, allowing developers to focus on configuration rather than boilerplate YAML.
 
 ## 🚀 Features
 
 * **Zero Boilerplate:** Define your app with just a few lines of YAML.
+* **Multi-Mode Support:** Switch between Deployment and CronJob modes using Chart annotations.
 * **Inversion of Control:** Supports custom naming conventions via `templatePrefix` injection.
 * **Dynamic Values:** Supports Go Template syntax (`tpl`) directly within `values.yaml`.
 * **Production Ready:** Includes secure defaults (non-root users, resource limits), probes, and metadata injection.
@@ -43,10 +44,12 @@ rm -rf charts/ && helm dependency update .
 
 ## ⚡ Quick Start
 
+### Deployment Mode (API/Web Applications)
+
 In your application chart's `values.yaml`, simply define the essentials. The library handles the rest.
 
 ```yaml
-# values.yaml (Minimal Example)
+# values.yaml (Minimal Example for Deployment Mode)
 
 deployment:
   replicaCount: 2
@@ -68,9 +71,34 @@ ingress:
 ```
 
 Running `helm template .` with this config will automatically generate:
+
 * A **Deployment** with 2 replicas and resource limits enabled.
 * A **Service** pointing to the pods.
 * An **Ingress** routing traffic to that service.
+
+### CronJob Mode (Scheduled/Batch Jobs)
+
+For scheduled tasks, add the annotation to your `Chart.yaml` and configure the CronJob in `values.yaml`:
+
+```yaml
+# Chart.yaml
+annotations:
+  "buraktungut.com/chart-type": "job"
+```
+
+```yaml
+# values.yaml (Minimal Example for CronJob Mode)
+
+cronJob:
+  schedule: "0 2 * * *"  # Daily at 2am
+  image:
+    repository: myrepo/my-batch-job
+    tag: v1.0.0
+  env:
+    JOB_TYPE: "data-processing"
+```
+
+This will generate a **CronJob** resource with secure defaults and resource limits.
 
 ## 🔧 Architecture & Naming Conventions
 
@@ -91,18 +119,40 @@ You can find example `values.yaml` files demonstrating various configurations in
 
 ### values-basic.yaml
 
-Minimal configuration with just deployment, service, and ingress basics.<br />
+Minimal configuration with just deployment, service, and ingress basics.
 Visit [test/values-basic.yaml](test/values-basic.yaml) for details.
 
 ### values-middle.yaml
 
-Intermediate configuration with shared values, ConfigMaps, Secrets, NodePort service, and environment variables.<br />
+Intermediate configuration with shared values, ConfigMaps, Secrets, NodePort service, and environment variables.
 Visit [test/values-middle.yaml](test/values-middle.yaml) for details.
 
 ### values-full.yaml
 
-Comprehensive configuration showcasing all features including custom labels, annotations, probes, template prefix override, and dynamic value injection via `tpl`.<br />
+Comprehensive configuration showcasing all features including custom labels, annotations, probes, template prefix override, and dynamic value injection via `tpl`.
 Visit [test/values-full.yaml](test/values-full.yaml) for details.
+
+### values-cronjob.yaml
+
+CronJob configuration for scheduled tasks with cron schedule, concurrency policies, job history limits, and resource management.
+Visit [test/values-cronjob.yaml](test/values-cronjob.yaml) for details.
+
+## 🔀 Chart Type Annotation
+
+The library supports two modes: **Deployment** (default) and **CronJob**. You control which resources are rendered using a Chart annotation in your application's `Chart.yaml`:
+
+```yaml
+# Chart.yaml
+annotations:
+  "buraktungut.com/chart-type": "job"  # Use "job" for CronJob mode
+```
+
+### Behavior
+
+* **No annotation or `"deployment"`**: Renders Deployment, Service, and Ingress resources (default behavior)
+* **`"job"`**: Renders CronJob resource only (Service and Ingress are skipped)
+
+This allows you to use the same library chart for both long-running services and scheduled batch jobs.
 
 
 ## ⚙️ Configuration Reference
@@ -155,6 +205,29 @@ The following table lists the configurable parameters of the `helm-serve` chart 
 | `ingress.rule.host` | The hostname for the ingress rule. | **Required if enabled** |
 | `ingress.rule.path` | The path for the ingress rule. | **Required if enabled** |
 | `ingress.rule.pathType` | Path match type (Prefix, Exact). | `Prefix` |
+
+### CronJob
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `cronJob.schedule` | Cron schedule expression (e.g., `"*/5 * * * *"`). | **Required** |
+| `cronJob.concurrencyPolicy` | How to handle concurrent executions (Allow, Forbid, Replace). | `nil` |
+| `cronJob.successfulJobsHistoryLimit` | Number of successful jobs to keep. | `nil` |
+| `cronJob.failedJobsHistoryLimit` | Number of failed jobs to keep. | `nil` |
+| `cronJob.suspend` | Suspend the CronJob (true/false). | `nil` |
+| `cronJob.backoffLimit` | Number of retries before marking job as failed. | `nil` |
+| `cronJob.activeDeadlineSeconds` | Job timeout in seconds. | `nil` |
+| `cronJob.ttlSecondsAfterFinished` | Clean up finished jobs after this duration. | `nil` |
+| `cronJob.restartPolicy` | Pod restart policy (OnFailure or Never). | `OnFailure` |
+| `cronJob.image.repository` | Container image repository. | `""` |
+| `cronJob.image.tag` | Container image tag. | `""` |
+| `cronJob.image.pullPolicy` | Image pull policy. | `IfNotPresent` |
+| `cronJob.imagePullSecrets` | List of image pull secrets. | `[]` |
+| `cronJob.env` | Key-value pairs for environment variables. Supports `tpl`. | `{}` |
+| `cronJob.configMaps` | List of ConfigMaps to inject (`{name: "", required: bool}`). | `[]` |
+| `cronJob.secrets` | List of Secrets to inject (`{name: "", required: bool}`). | `[]` |
+| `cronJob.resources` | CPU/Memory requests and limits. | `requests/limits: cpu: 200m, memory: 256Mi` |
+| `cronJob.labels` | Custom labels added to CronJob metadata. | `{}` |
+| `cronJob.podAnnotations` | Custom annotations added to Pod metadata. | `{}` |
 
 ## 💡 Advanced Usage
 

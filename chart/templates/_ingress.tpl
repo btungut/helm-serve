@@ -10,6 +10,8 @@
 {{- end }}
 
 {{- define "library.ingress" }}
+{{- $chartType := index .Chart.Annotations "buraktungut.com/chart-type" | default "" }}
+{{- if or (eq $chartType "") (eq $chartType "deployment") }}
 {{- $ing := .Values.ingress }}
 {{- if $ing.enabled }}
 {{- $templatePrefix := include "library.templatePrefix" $ }}
@@ -17,7 +19,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "library.ingress.name" $ }}
-  labels: 
+  labels:
     {{- include "library.ingress.labels" $ | nindent 4 }}
   {{- with $ing.annotations }}
   annotations:
@@ -26,9 +28,9 @@ metadata:
 spec:
   ingressClassName: {{ $ing.className | required "ingress.className is required" | quote }}
   rules:
-    - host: {{ (tpl $ing.rule.host $) | required "ingress.rule.host is required" }} 
+    - host: {{ (tpl $ing.rule.host $) | required "ingress.rule.host is required" }}
       http:
-        paths: 
+        paths:
           - path: {{ (tpl $ing.rule.path $) | required "ingres.rule.path is required" }}
             pathType: {{ $ing.rule.pathType | default "Prefix" }}
             backend:
@@ -36,5 +38,6 @@ spec:
                 name: {{ include "library.service.name" $ }}
                 port:
                   name: "app"
+{{- end }}
 {{- end }}
 {{- end }}

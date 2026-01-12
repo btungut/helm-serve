@@ -1,6 +1,6 @@
 apiVersion: v2
 name: helm-serve
-description: Helm base chart for serving API and web applications with minimal configuration. Designed to eliminate boilerplate and simplify Kubernetes deployments.
+description: Helm library chart for serving API/web applications and scheduled jobs with minimal configuration. Supports both Deployment and CronJob modes. Designed to eliminate boilerplate and simplify Kubernetes deployments.
 type: library
 home: https://github.com/btungut/helm-serve
 
@@ -11,6 +11,9 @@ keywords:
   - web
   - serve
   - deployment
+  - cronjob
+  - batch
+  - scheduled-jobs
   - microservice
   - boilerplate
   - minimal

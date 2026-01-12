@@ -26,6 +26,8 @@ resources:
 
 
 {{- define "library.deployment" }}
+{{- $chartType := index .Chart.Annotations "buraktungut.com/chart-type" | default "" }}
+{{- if or (eq $chartType "") (eq $chartType "deployment") }}
 {{- $dep := .Values.deployment }}
 {{- $templatePrefix := include "library.templatePrefix" $ }}
 {{- $depDefault := (include "default.library.deployment" $dep) | fromYaml }}
@@ -34,7 +36,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "library.deployment.name" $ }}
-  labels: 
+  labels:
     {{- include "library.deployment.labels" $ | nindent 4 }}
 spec:
   revisionHistoryLimit: {{ $dep.revisionHistoryLimit | default 0 }}
@@ -62,7 +64,7 @@ spec:
           image: "{{ $cnt.image.repository | required "image is required" }}:{{ $cnt.image.tag | required "tag is required" }}"
           imagePullPolicy: {{ $cnt.image.pullPolicy | default "IfNotPresent" }}
           {{- if or ($cnt.configMaps) ($cnt.secrets) }}
-          envFrom: 
+          envFrom:
           {{- range $i, $configMap := $cnt.configMaps }}
             - configMapRef:
                 name: {{ tpl $configMap.name $ | quote }}
@@ -121,4 +123,5 @@ spec:
           resources:
             {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
+{{- end }}
 {{- end }}
