@@ -1,4 +1,4 @@
-{{- define "default.library.cronjob" }}
+{{- define "default.library.cronJob" }}
 {{- $job := . }}
 resources:
   requests:
@@ -9,11 +9,11 @@ resources:
     memory: 256Mi
 {{- end }}
 
-{{- define "library.cronjob.name" }}
+{{- define "library.cronJob.name" }}
 {{- (tpl (.Values.cronJob.name | default (include (printf "%s.fullname" (include "library.templatePrefix" $)) $)) $) }}
 {{- end }}
 
-{{- define "library.cronjob.labels" }}
+{{- define "library.cronJob.labels" }}
 {{- include (printf "%s.labels" (include "library.templatePrefix" $)) $ }}
 {{- with $.Values.cronJob.labels }}
 {{- tpl (toYaml . | nindent 0) $ }}
@@ -21,19 +21,19 @@ resources:
 {{- end }}
 
 
-{{- define "library.cronjob" }}
+{{- define "library.cronJob" }}
 {{- $chartType := index .Chart.Annotations "buraktungut.com/chart-type" | default "" }}
-{{- if eq $chartType "cronjob" }}
+{{- if eq $chartType "cronJob" }}
 {{- $job := .Values.cronJob }}
 {{- $templatePrefix := include "library.templatePrefix" $ }}
-{{- $jobDefault := (include "default.library.cronjob" $job) | fromYaml }}
+{{- $jobDefault := (include "default.library.cronJob" $job) | fromYaml }}
 
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "library.cronjob.name" $ }}
+  name: {{ include "library.cronJob.name" $ }}
   labels:
-    {{- include "library.cronjob.labels" $ | nindent 4 }}
+    {{- include "library.cronJob.labels" $ | nindent 4 }}
 spec:
   schedule: {{ $job.schedule | required "cronJob.schedule is required" | quote }}
   {{- with $job.concurrencyPolicy }}
