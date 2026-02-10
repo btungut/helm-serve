@@ -27,7 +27,7 @@ Since this is a **Library Chart**, it is not meant to be installed directly (`he
 dependencies:
   - name: helm-serve
     repository: oci://ghcr.io/btungut
-    version: 0.1.0 # <-- Check for the latest version
+    version: 0.2.0 # <-- Check for the latest version
 ```
 
 2. Update dependencies:
