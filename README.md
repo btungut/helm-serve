@@ -11,7 +11,7 @@
 ## 🚀 Features
 
 * **Zero Boilerplate:** Define your app with just a few lines of YAML.
-* **Multi-Mode Support:** Switch between Deployment and CronJob modes using Chart annotations.
+* **Multi-Mode Support:** Switch between Deployment and CronJob modes by simply defining the relevant values section.
 * **Inversion of Control:** Supports custom naming conventions via `templatePrefix` injection.
 * **Dynamic Values:** Supports Go Template syntax (`tpl`) directly within `values.yaml`.
 * **Production Ready:** Includes secure defaults (non-root users, resource limits), probes, and metadata injection.
@@ -78,13 +78,7 @@ Running `helm template .` with this config will automatically generate:
 
 ### CronJob Mode (Scheduled/Batch Jobs)
 
-For scheduled tasks, add the annotation to your `Chart.yaml` and configure the CronJob in `values.yaml`:
-
-```yaml
-# Chart.yaml
-annotations:
-  "buraktungut.com/chart-type": "job"
-```
+For scheduled tasks, simply define the `cronJob` section in your `values.yaml`:
 
 ```yaml
 # values.yaml (Minimal Example for CronJob Mode)
@@ -137,22 +131,16 @@ Visit [test/values-full.yaml](test/values-full.yaml) for details.
 CronJob configuration for scheduled tasks with cron schedule, concurrency policies, job history limits, and resource management.
 Visit [test/values-cronjob.yaml](test/values-cronjob.yaml) for details.
 
-## 🔀 Chart Type Annotation
+## 🔀 Resource Mode Detection
 
-The library supports two modes: **Deployment** (default) and **CronJob**. You control which resources are rendered using a Chart annotation in your application's `Chart.yaml`:
-
-```yaml
-# Chart.yaml
-annotations:
-  "buraktungut.com/chart-type": "job"  # Use "job" for CronJob mode
-```
+The library supports two modes: **Deployment** and **CronJob**. The mode is determined automatically based on which values section you define:
 
 ### Behavior
 
-* **No annotation or `"deployment"`**: Renders Deployment, Service, and Ingress resources (default behavior)
-* **`"job"`**: Renders CronJob resource only (Service and Ingress are skipped)
+* **`deployment` key present in values**: Renders Deployment resource. Service and Ingress are also rendered if their `enabled` flag is set to `true`.
+* **`cronJob` key present in values**: Renders CronJob resource only.
 
-This allows you to use the same library chart for both long-running services and scheduled batch jobs.
+This allows you to use the same library chart for both long-running services and scheduled batch jobs without any extra configuration.
 
 
 ## ⚙️ Configuration Reference

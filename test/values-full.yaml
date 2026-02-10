@@ -1,5 +1,5 @@
 ### Example configuration for Deployment mode (API/Web applications)
-### This uses the default chart-type (deployment) - no annotation needed in Chart.yaml
+### Deployment mode is activated by defining the `deployment` section below
 ### For CronJob mode, see values-cronjob.yaml
 
 nameOverride: ""
@@ -15,7 +15,7 @@ shared:
 ### If not defined, the chart name will be used as the prefix
 templatePrefix: "overriden-tpl-prefix"
 
-### Values for the deployment (rendered when chart-type is "deployment" or not set)
+### Values for the deployment (rendered when `deployment` key is present in values)
 deployment:
 
   ### Number of desired pods 
