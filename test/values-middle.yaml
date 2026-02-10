@@ -1,5 +1,5 @@
 ### Example configuration for Deployment mode (API/Web applications)
-### This uses the default chart-type (deployment) - no annotation needed in Chart.yaml
+### Deployment mode is activated by defining the `deployment` section below
 ### For CronJob mode, see values-cronjob.yaml
 
 nameOverride: ""

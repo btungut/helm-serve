@@ -10,9 +10,6 @@
 {{- end }}
 
 {{- define "library.service" }}
-{{- $chartType := index .Chart.Annotations "buraktungut.com/chart-type" | default "" }}
-{{- if or (eq $chartType "") (eq $chartType "deployment") }}
-{{- if (hasKey .Values "service") }}
 {{- $svc := .Values.service }}
 {{- if $svc.enabled }}
 {{- $templatePrefix := include "library.templatePrefix" $ }}
@@ -33,7 +30,5 @@ spec:
       {{- end }}
   selector:
     {{- include (printf "%s.selectorLabels" $templatePrefix) $ | nindent 4 }}
-{{- end }}
-{{- end }}
 {{- end }}
 {{- end }}

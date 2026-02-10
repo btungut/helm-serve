@@ -22,8 +22,7 @@ resources:
 
 
 {{- define "library.cronJob" }}
-{{- $chartType := index .Chart.Annotations "buraktungut.com/chart-type" | default "" }}
-{{- if eq $chartType "cronJob" }}
+{{- if (hasKey .Values "cronJob") }}
 {{- $job := .Values.cronJob }}
 {{- $templatePrefix := include "library.templatePrefix" $ }}
 {{- $jobDefault := (include "default.library.cronJob" $job) | fromYaml }}

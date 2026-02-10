@@ -26,8 +26,7 @@ resources:
 
 
 {{- define "library.deployment" }}
-{{- $chartType := index .Chart.Annotations "buraktungut.com/chart-type" | default "" }}
-{{- if or (eq $chartType "") (eq $chartType "deployment") }}
+{{- if (hasKey .Values "deployment") }}
 {{- $dep := .Values.deployment }}
 {{- $templatePrefix := include "library.templatePrefix" $ }}
 {{- $depDefault := (include "default.library.deployment" $dep) | fromYaml }}
