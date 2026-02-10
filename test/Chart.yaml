@@ -5,14 +5,6 @@ type: application
 appVersion: ""
 version: 0.0.0
 
-### To enable CronJob rendering, uncomment the annotation below
-# annotations:
-#   "buraktungut.com/chart-type": "cronJob"
-
-## To enable Deployment rendering, uncomment the annotation below
-# annotations:
-#   "buraktungut.com/chart-type": "deployment"
-
 dependencies:
   - name: helm-serve
     repository: file://../chart

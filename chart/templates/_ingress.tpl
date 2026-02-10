@@ -10,8 +10,6 @@
 {{- end }}
 
 {{- define "library.ingress" }}
-{{- $chartType := index .Chart.Annotations "buraktungut.com/chart-type" | default "" }}
-{{- if or (eq $chartType "") (eq $chartType "deployment") }}
 {{- $ing := .Values.ingress }}
 {{- if $ing.enabled }}
 {{- $templatePrefix := include "library.templatePrefix" $ }}
@@ -38,6 +36,5 @@ spec:
                 name: {{ include "library.service.name" $ }}
                 port:
                   name: "app"
-{{- end }}
 {{- end }}
 {{- end }}
