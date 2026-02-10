@@ -113,6 +113,18 @@ spec:
                 - name:  {{ $key | quote }}
                   value: {{ tpl $val $ | quote }}
               {{- end }}
+              {{- with $cnt.startupProbe }}
+              startupProbe:
+                {{- tpl (toYaml .) $ | nindent 16 }}
+              {{- end }}
+              {{- with $cnt.livenessProbe }}
+              livenessProbe:
+                {{- tpl (toYaml .) $ | nindent 16 }}
+              {{- end }}
+              {{- with $cnt.readinessProbe }}
+              readinessProbe:
+                {{- tpl (toYaml .) $ | nindent 16 }}
+              {{- end }}
               {{- with (merge ($cnt.resources | default dict) $jobDefault.resources) }}
               resources:
                 {{- tpl (toYaml .) $ | nindent 16 }}
