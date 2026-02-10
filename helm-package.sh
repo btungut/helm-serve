@@ -7,6 +7,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cp -r "$SCRIPT_DIR"/*.md "$SCRIPT_DIR/chart/"
 
 # package the chart
-helm package "$SCRIPT_DIR/chart" --destination "$SCRIPT_DIR/.output"
-
-helm index "$SCRIPT_DIR/.output"
+pushd "$SCRIPT_DIR/chart"
+{
+    helm package .
+    helm repo index .
+} || {
+    popd
+    echo "Error: Failed to package the chart" >&2
+    exit 1
+}
