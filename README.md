@@ -1,8 +1,8 @@
 # helm-serve
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Kubernetes](https://img.shields.io/badge/Kubernetes-%3E%3D%201.19-326ce5.svg)](https://kubernetes.io/)
-[![Helm](https://img.shields.io/badge/Helm-v3-orange.svg)](https://helm.sh/)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/btungut)](https://artifacthub.io/packages/helm/btungut/helm-serve)
+[![Release](https://img.shields.io/github/v/release/btungut/helm-serve?include_prereleases&style=plastic)](https://github.com/btungut/helm-serve/releases)
+[![LICENSE](https://img.shields.io/github/license/btungut/helm-serve?style=plastic)](https://github.com/btungut/helm-serve/blob/master/LICENSE)
 
 **Bootstrap stateless Web & API workloads and scheduled jobs in seconds.**
 
@@ -27,7 +27,7 @@ Since this is a **Library Chart**, it is not meant to be installed directly (`he
 dependencies:
   - name: helm-serve
     repository: oci://ghcr.io/btungut
-    version: 0.0.1
+    version: 0.1.0 # <-- Check for the latest version
 ```
 
 2. Update dependencies:
@@ -245,23 +245,4 @@ The chart automatically injects the following environment variables into the con
 
 # License
 
-This project is released under the **Lexis Non-Commercial Source License (NCSL) v1.0**.
-
-### You are allowed to
-
-- Pull and run the official Docker image
-- Use the software for personal, educational, or internal evaluation purposes
-- Clone, modify, and build your own Docker images
-- Self-host the software for non-commercial use only
-
-### You are NOT allowed to
-
-- Use this software in any commercial or revenue-generating product or service
-- Offer the software as part of a paid platform or subscription
-- Provide the software as a hosted or managed service (SaaS)
-- Monetize the software directly or indirectly
-- Sell access to the software or its functionality
-
-Commercial use requires a separate commercial license.
-
-For commercial licensing inquiries, contact: **[burak.tungut@tungops.com.tr](mailto:burak.tungut@tungops.com.tr)**
+This project is licensed under the [Apache License 2.0](LICENSE.md).
