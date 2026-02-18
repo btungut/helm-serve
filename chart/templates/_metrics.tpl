@@ -64,6 +64,19 @@ spec:
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "library.metrics.name" $ }}
+  labels:
+    {{- include "library.metrics.labels" $ | nindent 4 }}
+spec:
+  groups:
+    - name: {{ include "library.metrics.name" $ }}
+      rules:
+        {{- tpl (toYaml (dig "prometheusRule" "rules" list $metrics)) $ | nindent 8 }}
+
 {{- end }}
 {{- end }}
 {{- end }}
