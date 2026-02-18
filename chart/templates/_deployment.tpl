@@ -105,6 +105,18 @@ spec:
               {{- fail (printf "containerPort must be a number or string, got %s" (kindOf $cnt.containerPort)) }}
               {{- end }}
               protocol: TCP
+            {{- if and $.Values.metrics $.Values.metrics.enabled }}
+            - name: metrics
+              {{- $metricsPort := $.Values.metrics.metricsPort | required "metrics.metricsPort is required when metrics.enabled is true" }}
+              {{- if kindIs "float64" $metricsPort }}
+              containerPort: {{ $metricsPort }}
+              {{- else if kindIs "string" $metricsPort }}
+              containerPort: {{ tpl $metricsPort $ }}
+              {{- else }}
+              {{- fail (printf "metrics.metricsPort must be a number or string, got %s" (kindOf $metricsPort)) }}
+              {{- end }}
+              protocol: TCP
+            {{- end }}
           {{- end }}
           {{- with $cnt.startupProbe }}
           startupProbe:
@@ -122,5 +134,8 @@ spec:
           resources:
             {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
+
+{{- include "library.metrics" $ }}
 {{- end }}
 {{- end }}
+

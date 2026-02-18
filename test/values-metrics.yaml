@@ -1,0 +1,39 @@
+### Example configuration for Deployment mode (API/Web applications)
+### Deployment mode is activated by defining the `deployment` section below
+### For CronJob mode, see values-cronjob.yaml
+
+nameOverride: ""
+fullnameOverride: ""
+
+deployment:
+  containerPort: 80
+  
+  image:
+    repository: myrepo
+    tag: latest
+
+
+service:
+  enabled: true
+  port: 80
+
+
+ingress:
+  enabled: false
+
+metrics:
+  enabled: true
+  metricsPort: 3123
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+    honorLabels: true
+
+    relabelings:
+      - sourceLabels: [__meta_kubernetes_pod_name]
+        targetLabel: instance_name
+
+    metricRelabelings:
+    - action: labeldrop
+      regex: foopath
