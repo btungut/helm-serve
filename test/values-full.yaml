@@ -147,3 +147,83 @@ ingress:
     path: /myapp(/|$)(.*)
     pathType: ImplementationSpecific
     ### You do not need to specify the service name and port here, they will be set automatically
+
+
+### Metrics & Observability (NEW in v0.2.2) ─────────────────────────────────
+###
+### A single switch (`metrics.enabled`) wires the workload into a complete
+### Prometheus stack:
+###
+###   1. Container             – an additional `metrics` port is exposed on
+###                              the Pod (containerPort = metrics.metricsPort)
+###   2. Service               – a dedicated `<release>-metrics` ClusterIP
+###                              Service is rendered on port 9211, targeting
+###                              the `metrics` containerPort
+###   3. ServiceMonitor (CRD)  – created when `metrics.serviceMonitor.enabled`
+###                              is true; selects the metrics Service
+###   4. PrometheusRule (CRD)  – created when rules are provided under
+###                              `metrics.prometheusRule.rules`
+###
+### NOTE: ServiceMonitor & PrometheusRule require the Prometheus Operator
+###       (kube-prometheus-stack) to be installed in the cluster.
+metrics:
+
+  ### Master switch – when false, no metrics resources are rendered.
+  enabled: true
+
+  ### Container port that exposes /metrics inside the Pod (REQUIRED).
+  ### Supports `tpl` so you can pull it from `shared` or any other value.
+  metricsPort: 9090
+
+  ### Path under which the application exposes Prometheus metrics.
+  path: /metrics
+
+  ### Extra labels merged onto the metrics Service, ServiceMonitor and
+  ### PrometheusRule metadata. Useful for Prometheus Operator's
+  ### `serviceMonitorSelector` matching.
+  labels:
+    release: kube-prometheus-stack
+    buraktungut.com/observability: "true"
+
+  serviceMonitor:
+
+    ### Render the ServiceMonitor CR (requires Prometheus Operator CRDs).
+    enabled: true
+
+    ### How often Prometheus scrapes the target.
+    interval: "30s"
+    scrapeTimeout: "10s"
+
+    ### http or https
+    scheme: "http"
+
+    ### Honor labels reported by the target over Prometheus-side labels.
+    honorLabels: true
+
+    ### Standard ServiceMonitor relabel/metricRelabel hooks – passed through
+    ### verbatim. `tpl` is applied so you can reference values from `shared`.
+    relabelings:
+      - sourceLabels: [__meta_kubernetes_pod_node_name]
+        targetLabel: node
+
+    metricRelabelings:
+      - sourceLabels: [__name__]
+        regex: "go_.*"
+        action: drop
+
+  prometheusRule:
+
+    ### Provide one or more rules (alerts / recording rules) to render a
+    ### PrometheusRule CR. Pass an empty list to skip the resource.
+    rules:
+      - alert: "{{ .Release.Name }}HighErrorRate"
+        expr: 'sum(rate(http_requests_total{status=~"5.."}[5m])) > 0.05'
+        for: "10m"
+        labels:
+          severity: warning
+          owner: platform
+        annotations:
+          summary: "High 5xx rate on {{ .Release.Name }}"
+          description: "More than 5% of requests are failing for the last 10 minutes."
+      - record: "job:http_inprogress_requests:sum"
+        expr: 'sum by(job) (http_inprogress_requests)'
