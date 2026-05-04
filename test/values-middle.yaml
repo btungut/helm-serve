@@ -45,3 +45,15 @@ ingress:
   rule:
     host: "dev.myapi.mydomain.local"
     path: /
+
+
+### Metrics (NEW in v0.2.2)
+### When enabled, the chart automatically:
+###   - exposes an additional `metrics` containerPort on the Pod
+###   - renders a dedicated `<release>-metrics` ClusterIP Service on port 9211
+### This minimal example only enables the metrics Service. ServiceMonitor and
+### PrometheusRule are demonstrated in values-full.yaml and values-metrics.yaml.
+metrics:
+  enabled: true
+  metricsPort: 9090
+  path: /metrics

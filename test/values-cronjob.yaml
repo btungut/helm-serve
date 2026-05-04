@@ -82,9 +82,30 @@ cronJob:
       cpu: 200m
       memory: 256Mi
 
+  ### CronJob containers also support the full set of Kubernetes probes.
+  ### Useful for long-running batch jobs that expose a /healthz endpoint
+  ### or for sidecar-style scheduled workers.
   startupProbe:
     httpGet:
       path: /healthz
       port: 8080
     initialDelaySeconds: 5
     periodSeconds: 10
+    failureThreshold: 30
+
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: 8080
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readinessProbe:
+    exec:
+      command:
+        - /bin/sh
+        - -c
+        - "test -f /tmp/ready"
+    periodSeconds: 15
+    timeoutSeconds: 3

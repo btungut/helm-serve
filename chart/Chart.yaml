@@ -1,41 +1,33 @@
-apiVersion: v2
-name: helm-serve
-description: Helm library chart for serving API/web applications and scheduled jobs with minimal configuration. Supports both Deployment and CronJob modes. Designed to eliminate boilerplate and simplify Kubernetes deployments.
-type: library
-home: https://github.com/btungut/helm-serve
-
-keywords:
-  - kubernetes
-  - helm
-  - api
-  - web
-  - serve
-  - deployment
-  - cronjob
-  - batch
-  - scheduled-jobs
-  - microservice
-  - boilerplate
-  - minimal
-
-
-maintainers:
-  - name: Burak Tungut
-    email: buraktungut@gmail.com
-    url: https://github.com/btungut
-    
-
-sources:
-  - https://github.com/btungut/helm-serve
-
-deprecated: false
-
-appVersion: ""
-version: 0.2.0
-
 annotations:
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/license: Apache-2.0
   artifacthub.io/links: |-
     - name: GitHub
       url: https://github.com/btungut/helm-serve
+apiVersion: v2
+description: Helm library chart for serving API/web applications and scheduled jobs
+  with minimal configuration. Supports both Deployment and CronJob modes. Designed
+  to eliminate boilerplate and simplify Kubernetes deployments.
+home: https://github.com/btungut/helm-serve
+keywords:
+- kubernetes
+- helm
+- api
+- web
+- serve
+- deployment
+- cronjob
+- batch
+- scheduled-jobs
+- microservice
+- boilerplate
+- minimal
+maintainers:
+- email: buraktungut@gmail.com
+  name: Burak Tungut
+  url: https://github.com/btungut
+name: helm-serve
+sources:
+- https://github.com/btungut/helm-serve
+type: library
+version: 0.2.2
