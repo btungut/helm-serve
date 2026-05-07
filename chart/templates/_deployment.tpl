@@ -138,6 +138,7 @@ spec:
           {{- end }}
 
 {{- include "library.metrics" $ }}
+{{- include "library.additionalManifests" $ }}
 {{- end }}
 {{- end }}
 
