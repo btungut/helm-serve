@@ -148,6 +148,43 @@ ingress:
     pathType: ImplementationSpecific
     ### You do not need to specify the service name and port here, they will be set automatically
 
+  ### TLS settings (optional). Three modes — pick ONE:
+  ###
+  ###   [Mode 1] Auto (simplest) — TLS for `rule.host` under one secret:
+  ###     tls:
+  ###       enabled: true
+  ###       secretName: "my-app-tls"
+  ###
+  ###   [Mode 2] Multi-host, single-secret (e.g. SAN cert):
+  ###     tls:
+  ###       enabled: true
+  ###       hosts:
+  ###         - "{{ .Values.shared.primaryHost }}"
+  ###         - "www.mycompany.local"
+  ###       secretName: "{{ .Release.Name }}-tls"
+  ###
+  ###   [Mode 3] Power-user — N hosts → N secrets (true SNI):
+  ###     tls:
+  ###       enabled: true
+  ###       secrets:
+  ###         - hosts: ["api.mycompany.local"]
+  ###           secretName: "api-tls"
+  ###         - hosts: ["admin.mycompany.local", "internal.mycompany.local"]
+  ###           secretName: "admin-tls"
+  ###
+  ### Cert-manager? Just add the issuer annotation under `ingress.annotations`:
+  ###     cert-manager.io/cluster-issuer: letsencrypt-prod
+  ### …and cert-manager will provision the secret named in `tls.secretName`.
+  ###
+  ### `tpl` is applied to every host and secretName, so you can reference
+  ### `.Values.shared.*`, `.Release.*`, etc.
+  tls:
+    enabled: true
+    hosts:
+      - "{{ .Values.shared.someOtherSharedValue }}.mycompany.local"
+      - "www.mycompany.local"
+    secretName: "{{ .Release.Name }}-tls"
+
 
 ### Metrics & Observability (NEW in v0.2.2) ─────────────────────────────────
 ###

@@ -1,0 +1,55 @@
+### Test fixture: every TLS mode supported by `library.ingress`.
+### Switch the active mode by toggling which `tls:` block is uncommented.
+
+shared:
+  primaryHost: "api.mycompany.local"
+
+deployment:
+  image:
+    repository: myrepo
+    tag: latest
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+
+  ### cert-manager integration: setting an issuer here makes the secret
+  ### referenced below be auto-provisioned by cert-manager.
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+  rule:
+    host: "{{ .Values.shared.primaryHost }}"
+    path: /
+    pathType: Prefix
+
+  ### ── Mode 1: Auto ──────────────────────────────────────────────
+  ### Hosts default to [rule.host]. Only secretName is required.
+  # tls:
+  #   enabled: true
+  #   secretName: "{{ .Release.Name }}-tls"
+
+  ### ── Mode 2: Multi-host, single-secret (SAN cert) ──────────────
+  tls:
+    enabled: true
+    hosts:
+      - "{{ .Values.shared.primaryHost }}"
+      - "www.mycompany.local"
+    secretName: "{{ .Release.Name }}-tls"
+
+  ### ── Mode 3: Power-user, N secrets (SNI) ──────────────────────
+  # tls:
+  #   enabled: true
+  #   secrets:
+  #     - hosts:
+  #         - "api.mycompany.local"
+  #       secretName: "api-tls"
+  #     - hosts:
+  #         - "admin.mycompany.local"
+  #         - "internal.mycompany.local"
+  #       secretName: "admin-tls"
