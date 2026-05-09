@@ -1,0 +1,235 @@
+---
+# Source: testing-api/templates/deployment.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: smoke-testing-api-metrics
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+    buraktungut.com/observability: "true"
+    release: kube-prometheus-stack
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9211
+      targetPort: metrics
+      name: http-metrics
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+---
+# Source: testing-api/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: custom-service-name
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+    buraktungut.com/custom-service-label: ServiceLabelValue
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: "app"
+      name: "app"
+      nodePort: 31999
+  selector:
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+---
+# Source: testing-api/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smoke-testing-api
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+    buraktungut.com/custom-deployment-label: Visit github.com/btungut
+spec:
+  revisionHistoryLimit: 1
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: testing-api
+      app.kubernetes.io/instance: smoke
+  template:
+    metadata:
+      annotations:
+        buraktungut.com/custom-pod-annotation: Hello from annotation
+      labels:
+        app.kubernetes.io/name: testing-api
+        app.kubernetes.io/instance: smoke
+    spec:
+      terminationGracePeriodSeconds: 12
+      imagePullSecrets:
+        - name: 'our-common-pull-secret-name'
+      containers:
+        - name: app
+          image: "myrepo:latest"
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: "my-configmap"
+                optional: false
+            - configMapRef:
+                name: "another-configmap"
+                optional: true
+            - secretRef:
+                name: "my-secret"
+                optional: false
+            - secretRef:
+                name: "another-secret"
+                optional: true
+          env:
+            - name: HELM_Version
+              value: "0.0.0"
+            - name: HELM_AppVersion
+              value: ""
+            - name: HELM_Description
+              value: "testing-api"
+            - name: HELM_Namespace
+              value: "yorumjet-test-apps"
+            - name: K8S_Namespace
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name:  "APP_PORT"
+              value: "3032"
+            - name:  "env_from_helm_context"
+              value: "smoke-yorumjet-test-apps"
+            - name:  "env_from_shared_value"
+              value: "shared-value-123"
+            - name:  "hello"
+              value: "world123"
+          ports:
+            - name: app
+              containerPort: 3032
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          startupProbe:
+            failureThreshold: 6
+            httpGet:
+              path: /overriden/url
+              port: app
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 200m
+              memory: 256Mi
+---
+# Source: testing-api/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: custom-ingress-name
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+    buraktungut.com/custom-ingress-label: IngressLabelValue
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: "nginx"
+  
+  tls:
+    - hosts:
+        - "shared-value-123.mycompany.local"
+        - "www.mycompany.local"
+      secretName: "smoke-tls"
+  rules:
+    - host: mycompany.local
+      http:
+        paths:
+          - path: /myapp(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: custom-service-name
+                port:
+                  name: "app"
+---
+# Source: testing-api/templates/deployment.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: smoke-testing-api-metrics
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+    buraktungut.com/observability: "true"
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: smoke-testing-api-metrics
+      rules:
+        - alert: 'smokeHighErrorRate'
+          annotations:
+            description: More than 5% of requests are failing for the last 10 minutes.
+            summary: High 5xx rate on smoke
+          expr: sum(rate(http_requests_total{status=~"5.."}[5m])) > 0.05
+          for: 10m
+          labels:
+            owner: platform
+            severity: warning
+        - expr: sum by(job) (http_inprogress_requests)
+          record: job:http_inprogress_requests:sum
+---
+# Source: testing-api/templates/deployment.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: smoke-testing-api-metrics
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+    buraktungut.com/observability: "true"
+    release: kube-prometheus-stack
+spec:
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+      honorLabels: true
+      interval: 30s
+      scrapeTimeout: 10s
+      scheme: http
+      relabelings:
+        - sourceLabels:
+          - __meta_kubernetes_pod_node_name
+          targetLabel: node
+      metricRelabelings:
+        - action: drop
+          regex: go_.*
+          sourceLabels:
+          - __name__
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: testing-api
+      app.kubernetes.io/instance: smoke
+  namespaceSelector:
+    matchNames:
+      - yorumjet-test-apps

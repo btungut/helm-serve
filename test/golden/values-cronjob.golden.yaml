@@ -1,0 +1,95 @@
+---
+# Source: testing-api/templates/cronJob.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: smoke-testing-api
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+    buraktungut.com/custom-cronjob-label: CronJobLabelValue
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  startingDeadlineSeconds: 200
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: testing-api
+        app.kubernetes.io/instance: smoke
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 600
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          annotations:
+            buraktungut.com/custom-pod-annotation: Hello from CronJob
+          labels:
+            app.kubernetes.io/name: testing-api
+            app.kubernetes.io/instance: smoke
+        spec:
+          restartPolicy: OnFailure
+          imagePullSecrets:
+            - name: my-pull-secret
+          containers:
+            - name: app
+              image: "myrepo/my-cronjob:latest"
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - configMapRef:
+                    name: "my-configmap"
+                    optional: false
+                - secretRef:
+                    name: "my-secret"
+                    optional: false
+              env:
+                - name: HELM_Version
+                  value: "0.0.0"
+                - name: HELM_AppVersion
+                  value: ""
+                - name: HELM_Description
+                  value: "testing-api"
+                - name: HELM_Namespace
+                  value: "yorumjet-test-apps"
+                - name: K8S_Namespace
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name:  "JOB_TYPE"
+                  value: "scheduled-task"
+                - name:  "LOG_LEVEL"
+                  value: "info"
+              startupProbe:
+                failureThreshold: 30
+                httpGet:
+                  path: /healthz
+                  port: 8080
+                initialDelaySeconds: 5
+                periodSeconds: 10
+              livenessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /healthz
+                  port: 8080
+                periodSeconds: 30
+                timeoutSeconds: 5
+              readinessProbe:
+                exec:
+                  command:
+                  - /bin/sh
+                  - -c
+                  - test -f /tmp/ready
+                periodSeconds: 15
+                timeoutSeconds: 3
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
