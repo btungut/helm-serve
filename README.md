@@ -4,82 +4,93 @@
 [![Release](https://img.shields.io/github/v/release/btungut/helm-serve?include_prereleases&style=plastic)](https://github.com/btungut/helm-serve/releases)
 [![LICENSE](https://img.shields.io/github/license/btungut/helm-serve?style=plastic)](https://github.com/btungut/helm-serve/blob/master/LICENSE)
 
-**Bootstrap stateless Web & API workloads, scheduled jobs, and a full Prometheus observability stack — in seconds.**
+**A Helm library chart for shipping stateless services, scheduled jobs, observability, and ingress TLS without repeating Kubernetes boilerplate.**
 
-`helm-serve` is a DRY (Don't Repeat Yourself) **Helm Library Chart** that acts as a standardized foundation for microservices and scheduled tasks. It abstracts away the boilerplate of writing `Deployment`, `Service`, `Ingress`, `CronJob`, `ServiceMonitor`, and `PrometheusRule` manifests by hand, letting you describe a workload in 10 lines of YAML instead of 200.
-
----
-
-## ✨ What's New in v0.2.2
-
-> 🔭 **First-class Prometheus observability — out of the box.**
->
-> A single switch (`metrics.enabled: true`) now wires your workload into a full Prometheus stack:
->
-> | Resource | Created when… | Purpose |
-> |---|---|---|
-> | `metrics` containerPort on the Pod | `metrics.enabled: true` | exposes `/metrics` to the cluster |
-> | **Service** `<release>-metrics` (port 9211) | `metrics.enabled: true` | dedicated scrape target, isolated from app traffic |
-> | **ServiceMonitor** | `metrics.serviceMonitor.enabled: true` | Prometheus Operator picks the workload up automatically |
-> | **PrometheusRule** | `metrics.prometheusRule.rules` is non-empty | alerting & recording rules deployed alongside the app |
->
-> No new templates to write. No copy-pasting alert YAML between services. Flip one flag and your workload becomes observable, alertable, and SRE-ready.
->
-> 👉 See it end-to-end in [test/values-metrics.yaml](test/values-metrics.yaml).
+`helm-serve` is a DRY Helm library chart that standardizes how teams render `Deployment`, `CronJob`, `Service`, `Ingress`, `ServiceMonitor`, and `PrometheusRule` resources. You describe the workload once in `values.yaml`; the chart expands that into production-ready manifests with sane defaults, `tpl` support, and a clean extension model.
 
 ---
 
-## 🚀 Features
+## Why teams use it
 
-* **Zero Boilerplate** — Define your app with a few lines of YAML; the library writes the manifests.
-* **Multi-Mode Workloads** — Switch between **Deployment** and **CronJob** by toggling a single key.
-* **Built-in Observability (NEW)** — Auto-render `Service`, `ServiceMonitor`, and `PrometheusRule` from a single `metrics:` block.
-* **Probes Everywhere** — `startupProbe`, `livenessProbe`, and `readinessProbe` on both Deployments **and** CronJobs.
-* **Inversion of Control** — Plug in your own naming conventions via the `templatePrefix` hook.
-* **Dynamic Values** — Native Go template (`tpl`) support inside `values.yaml`, including environment variables and relabel rules.
-* **Production Defaults** — Resource requests/limits, GitOps-friendly `revisionHistoryLimit: 0`, graceful termination, and metadata injection — all preconfigured.
-* **Standardized Networking** — Auto-wired Ingress, Service, and metrics Service.
+- **One library, two workload modes**: run long-lived web/API services and scheduled jobs with the same abstraction.
+- **Low YAML surface area**: keep application charts small while still producing full Kubernetes resources.
+- **Built for day-2 operations**: probes, resources, metadata injection, metrics wiring, and ingress are already modeled.
+- **Consumer-owned naming**: keep your own helper conventions through `templatePrefix` instead of adopting someone else's naming scheme.
 
-## 📦 Installation
+---
 
-`helm-serve` is a **Library Chart** — it is *not* installed directly. Add it as a dependency to your application chart.
+## What's New in v0.2.3-beta1
 
-1. Add it to your application's `Chart.yaml`:
+`v0.2.2` introduced the observability layer. `v0.2.3-beta1` builds on top of that and closes a real production gap: **Ingress TLS is now a first-class capability instead of a hand-written add-on.**
+
+| Area | v0.2.2 | v0.2.3-beta1 |
+|---|---|---|
+| Observability | Metrics Service, `ServiceMonitor`, `PrometheusRule` | Preserved as-is |
+| Ingress TLS | Not modeled by the library | Built in with 3 TLS modes |
+| Multi-domain HTTPS | Manual/custom templating needed | Supported via `ingress.tls.hosts` |
+| SNI / multiple certs | Manual/custom templating needed | Supported via `ingress.tls.secrets[]` |
+| `tpl` in TLS fields | N/A | Supported for hosts and `secretName` |
+
+### New ingress TLS modes
+
+1. **Auto mode**
+   Enable TLS and provide one secret. The chart uses `ingress.rule.host` automatically.
+2. **Multi-host, single-secret mode**
+   Perfect for SAN certificates covering multiple domains.
+3. **Power-user multi-secret mode**
+   Provide `ingress.tls.secrets[]` for true SNI setups where different hosts terminate with different secrets.
+
+This is the practical difference between `0.2.2` and the current prerelease: you no longer need to fork the ingress template just to express real HTTPS topologies.
+
+---
+
+## Feature Set
+
+- **Deployment and CronJob modes** from the same library chart.
+- **Ingress, Service, and metrics resources** rendered only when enabled.
+- **Ingress TLS support** for single-host, multi-host, and multi-secret/SNI setups.
+- **Prometheus-ready observability** with metrics `Service`, optional `ServiceMonitor`, and optional `PrometheusRule`.
+- **Probe support everywhere** with `startupProbe`, `livenessProbe`, and `readinessProbe` on both Deployments and CronJobs.
+- **`tpl`-aware values** across env vars, metrics configuration, relabelings, ingress hosts, and TLS secret names.
+- **Production-oriented defaults** like resource requests/limits, `revisionHistoryLimit: 0`, graceful termination, and metadata injection.
+- **Consumer-side naming control** through `templatePrefix`.
+
+## Installation
+
+`helm-serve` is a **library chart**. You consume it from an application chart; you do not install it directly as a standalone release.
+
+Add it to your application's `Chart.yaml`:
 
 ```yaml
 dependencies:
   - name: helm-serve
     repository: oci://ghcr.io/btungut
-    version: 0.2.2 # <-- check for the latest release
+    version: 0.2.3-beta1
 ```
 
-2. Update dependencies:
+Then update dependencies:
 
 ```bash
 helm dependency update
 ```
 
-2.a. Clean your `charts/` directory if needed:
+If you want a clean rebuild of vendored dependencies:
 
 ```bash
 rm -rf charts/ && helm dependency update .
 ```
 
-## ⚡ Quick Start
+## Quick Start
 
-### Deployment Mode (API/Web Applications)
-
-In your application chart's `values.yaml`, define the essentials. The library handles the rest.
+### Deployment mode
 
 ```yaml
-# values.yaml — minimal Deployment mode
-
 deployment:
   replicaCount: 2
   image:
     repository: myrepo/my-app
     tag: v1.0.0
-  containerPort: 80
+  containerPort: 8080
 
 service:
   enabled: true
@@ -87,44 +98,36 @@ service:
 
 ingress:
   enabled: true
-  className: "nginx"
+  className: nginx
   rule:
-    host: "api.mydomain.com"
+    host: api.mydomain.com
     path: /
 ```
 
-`helm template .` will generate:
+This renders a `Deployment`, a `Service`, and an `Ingress` with the service backend already wired.
 
-* A **Deployment** with 2 replicas and resource limits.
-* A **Service** pointing to the pods.
-* An **Ingress** routing traffic to that service.
-
-### CronJob Mode (Scheduled / Batch Jobs)
+### CronJob mode
 
 ```yaml
-# values.yaml — minimal CronJob mode
-
 cronJob:
-  schedule: "0 2 * * *"  # daily at 2am
+  schedule: "0 2 * * *"
   image:
     repository: myrepo/my-batch-job
     tag: v1.0.0
   env:
-    JOB_TYPE: "data-processing"
+    JOB_TYPE: data-processing
 ```
 
-This emits a **CronJob** with secure defaults, resource limits, and optional probes.
+This renders a `CronJob` with the same resource, probe, env, config, and secret primitives available in Deployment mode.
 
-### 🔭 Add Observability — One Block, Three Resources (NEW)
-
-Enable Prometheus scraping, alerts, and recording rules without leaving your `values.yaml`:
+### Observability in one block
 
 ```yaml
-# values.yaml — Deployment + full observability
-
 deployment:
   containerPort: 8080
-  image: { repository: myrepo/my-app, tag: v1.0.0 }
+  image:
+    repository: myrepo/my-app
+    tag: v1.0.0
 
 service:
   enabled: true
@@ -132,187 +135,205 @@ service:
 
 metrics:
   enabled: true
-  metricsPort: 9090          # the port your /metrics handler listens on
+  metricsPort: 9090
   path: /metrics
-
   serviceMonitor:
-    enabled: true            # requires Prometheus Operator CRDs
-    interval: 30s
-    scrapeTimeout: 10s
-
+    enabled: true
   prometheusRule:
     rules:
       - alert: HighErrorRate
         expr: 'sum(rate(http_requests_total{status=~"5.."}[5m])) > 0.05'
         for: 10m
-        labels: { severity: warning }
-        annotations:
-          summary: "High 5xx rate on {{ .Release.Name }}"
 ```
 
-`helm template .` now additionally generates a **metrics Service** (`<release>-metrics`, port 9211), a **ServiceMonitor**, and a **PrometheusRule** — all selecting the workload's pods.
+When enabled, the chart adds a dedicated metrics Service and can optionally emit `ServiceMonitor` and `PrometheusRule` resources for Prometheus Operator based stacks.
 
-> ℹ️ ServiceMonitor and PrometheusRule are CRDs from the **Prometheus Operator** (kube-prometheus-stack). They render unconditionally — install the Operator first if you want them applied to the cluster.
-
-## 🔧 Architecture & Naming Conventions
-
-`helm-serve` is agnostic to naming conventions. It delegates the responsibility of naming resources to the **Consumer Chart**.
-
-To use your own naming logic (e.g., `my-app-fullname`), define a helper template in your chart and pass the prefix:
+### Ingress TLS in three shapes
 
 ```yaml
-# values.yaml
-templatePrefix: "my-custom-naming-prefix"
+ingress:
+  enabled: true
+  className: nginx
+  rule:
+    host: api.mydomain.com
+    path: /
+  tls:
+    enabled: true
+    hosts:
+      - api.mydomain.com
+      - www.mydomain.com
+    secretName: my-app-tls
 ```
 
-The library will then call `{{ include "my-custom-naming-prefix.fullname" . }}` to name resources.
+For SNI-style setups, switch from `hosts` to `secrets[]` and assign different certificates per host set.
 
-## 📚 Example `values.yaml` files
+## Architecture and naming
 
-The [test/](test/) directory ships a graduated set of examples — read them in order and you'll see every supported feature.
+`helm-serve` intentionally keeps naming responsibility in the consumer chart.
 
-| File | Scope | What it demonstrates |
+If your chart exposes helpers such as `my-app.fullname`, pass the prefix below and the library will call your templates instead of hardcoding names:
+
+```yaml
+templatePrefix: my-app
+```
+
+That allows the library to stay reusable without forcing a naming opinion across teams.
+
+## Example values files
+
+The [test/](test/) directory is effectively a cookbook. Read the files in order if you want to understand the surface area quickly.
+
+| File | Focus | What it demonstrates |
 |---|---|---|
-| [`values-basic.yaml`](test/values-basic.yaml) | **Hello-world** | Minimal Deployment + Service + Ingress. |
-| [`values-middle.yaml`](test/values-middle.yaml) | **Day-2 ready** | Adds `shared` values, ConfigMaps, Secrets, NodePort, env vars, **basic metrics Service**. |
-| [`values-full.yaml`](test/values-full.yaml) | **Everything, kitchen sink** | All metadata, probes, custom labels/annotations, `templatePrefix` override, `tpl` injection, **full metrics stack with ServiceMonitor + PrometheusRule**. |
-| [`values-metrics.yaml`](test/values-metrics.yaml) ⭐ **NEW** | **Observability deep-dive** | Focused walkthrough of the `metrics:` block — every knob, with annotations. |
-| [`values-cronjob.yaml`](test/values-cronjob.yaml) | **Scheduled jobs** | CronJob mode with concurrency, history, deadlines, restart policy, and **all three probes (startup/liveness/readiness)**. |
+| [`values-basic.yaml`](test/values-basic.yaml) | Minimal service | Deployment + Service + Ingress |
+| [`values-middle.yaml`](test/values-middle.yaml) | Day-2 baseline | Shared values, ConfigMaps, Secrets, NodePort, env vars, metrics Service |
+| [`values-full.yaml`](test/values-full.yaml) | Full surface | Labels, annotations, probes, `templatePrefix`, `tpl`, ingress TLS, full metrics stack |
+| [`values-metrics.yaml`](test/values-metrics.yaml) | Observability | Dedicated walkthrough of the `metrics:` block |
+| [`values-ingress-tls.yaml`](test/values-ingress-tls.yaml) | HTTPS patterns | All supported ingress TLS modes, including cert-manager-friendly examples |
+| [`values-cronjob.yaml`](test/values-cronjob.yaml) | Scheduled workloads | CronJob mode with execution policy and probe examples |
 
-## 🔀 Resource Mode Detection
+## Workload mode detection
 
-The library supports two workload modes — **Deployment** and **CronJob** — selected automatically based on which top-level key is present in your values:
+The library selects its primary workload resource from the top-level values you provide:
 
-* **`deployment` key present** → renders `Deployment`. `Service`, `Ingress`, and `metrics.*` resources are also rendered when their `enabled` flags are `true`.
-* **`cronJob` key present** → renders `CronJob`.
+- `deployment` present: renders a `Deployment`
+- `cronJob` present: renders a `CronJob`
 
-The same library powers long-running services and scheduled batch jobs without extra configuration.
+Secondary resources such as `Service`, `Ingress`, and observability objects are rendered independently based on their own `enabled` flags.
 
-## ⚙️ Configuration Reference
+## Configuration Reference
 
-### Global & Shared
+### Global and shared
 
 | Parameter | Description | Default |
 |---|---|---|
-| `templatePrefix` | **Critical:** prefix used to invoke naming templates from the consumer chart. | `{{ .Chart.Name }}` |
-| `shared` | Map of shared variables, accessible elsewhere via `tpl`. | `{}` |
+| `templatePrefix` | Prefix used to invoke naming templates from the consumer chart. | `{{ .Chart.Name }}` |
+| `shared` | Shared variables that can be consumed from `tpl` expressions elsewhere. | `{}` |
 
 ### Deployment
 
 | Parameter | Description | Default |
 |---|---|---|
 | `deployment.replicaCount` | Number of desired pods. | `1` |
-| `deployment.revisionHistoryLimit` | Number of old ReplicaSets to retain. | `0` (GitOps friendly) |
-| `deployment.terminationGracePeriodSeconds` | Graceful termination duration. | `10` |
+| `deployment.revisionHistoryLimit` | Old ReplicaSets to retain. | `0` |
+| `deployment.terminationGracePeriodSeconds` | Graceful termination period. | `10` |
 | `deployment.image.repository` | Container image repository. | `""` |
 | `deployment.image.tag` | Container image tag. | `""` |
 | `deployment.image.pullPolicy` | Image pull policy. | `IfNotPresent` |
-| `deployment.imagePullSecrets` | List of image pull secrets. | `[]` |
-| `deployment.containerPort` | Port the container exposes. | **Required** |
-| `deployment.env` | Environment variables. Supports `tpl` interpolation. | `{}` |
-| `deployment.configMaps` | ConfigMaps to inject (`{name, required}`). | `[]` |
-| `deployment.secrets` | Secrets to inject (`{name, required}`). | `[]` |
-| `deployment.resources` | CPU/Memory requests and limits. | `cpu: 200m / memory: 256Mi` |
-| `deployment.startupProbe` | Kubernetes Startup Probe. | `{}` |
-| `deployment.livenessProbe` | Kubernetes Liveness Probe. | `{}` |
-| `deployment.readinessProbe` | Kubernetes Readiness Probe. | `{}` |
-| `deployment.labels` | Custom labels on Deployment metadata. | `{}` |
-| `deployment.podAnnotations` | Custom annotations on Pod metadata. | `{}` |
+| `deployment.imagePullSecrets` | Image pull secrets. | `[]` |
+| `deployment.containerPort` | Main application container port. | Required |
+| `deployment.env` | Environment variables, with `tpl` support. | `{}` |
+| `deployment.configMaps` | ConfigMaps to inject. | `[]` |
+| `deployment.secrets` | Secrets to inject. | `[]` |
+| `deployment.resources` | CPU and memory requests/limits. | `cpu: 200m / memory: 256Mi` |
+| `deployment.startupProbe` | Startup probe definition. | `{}` |
+| `deployment.livenessProbe` | Liveness probe definition. | `{}` |
+| `deployment.readinessProbe` | Readiness probe definition. | `{}` |
+| `deployment.labels` | Extra Deployment labels. | `{}` |
+| `deployment.podAnnotations` | Extra Pod annotations. | `{}` |
 
 ### Service
 
 | Parameter | Description | Default |
 |---|---|---|
 | `service.enabled` | Enable Service creation. | `false` |
-| `service.name` | Override default service name (use with caution). | `""` |
-| `service.type` | `ClusterIP`, `NodePort`, `LoadBalancer`. | `ClusterIP` |
-| `service.port` | Service port. | **Required if enabled** |
-| `service.nodePort` | Fixed NodePort (only when `type: NodePort`). | `nil` |
-| `service.labels` | Custom labels for the Service. | `{}` |
+| `service.name` | Override the default service name. | `""` |
+| `service.type` | `ClusterIP`, `NodePort`, or `LoadBalancer`. | `ClusterIP` |
+| `service.port` | Service port. | Required if enabled |
+| `service.nodePort` | Fixed NodePort value. | `nil` |
+| `service.labels` | Extra Service labels. | `{}` |
 
 ### Ingress
 
 | Parameter | Description | Default |
 |---|---|---|
 | `ingress.enabled` | Enable Ingress creation. | `false` |
-| `ingress.className` | Ingress controller class name (e.g., `nginx`). | **Required if enabled** |
-| `ingress.annotations` | Annotations (e.g., rewrite rules). | `{}` |
-| `ingress.rule.host` | Hostname for the ingress rule. | **Required if enabled** |
-| `ingress.rule.path` | Path for the ingress rule. | **Required if enabled** |
-| `ingress.rule.pathType` | `Prefix`, `Exact`, `ImplementationSpecific`. | `Prefix` |
+| `ingress.className` | Ingress class name. | Required if enabled |
+| `ingress.annotations` | Ingress annotations. | `{}` |
+| `ingress.rule.host` | Primary host. | Required if enabled |
+| `ingress.rule.path` | Request path. | Required if enabled |
+| `ingress.rule.pathType` | `Prefix`, `Exact`, or `ImplementationSpecific`. | `Prefix` |
+| `ingress.tls.enabled` | Enable TLS block rendering. | `false` |
+| `ingress.tls.secretName` | Secret name for auto or multi-host single-secret mode. Supports `tpl`. | Required when TLS is enabled and `secrets[]` is not used |
+| `ingress.tls.hosts` | Explicit host list for single-secret mode. Supports `tpl`. | Defaults to `[ingress.rule.host]` |
+| `ingress.tls.secrets` | List of `{ hosts, secretName }` pairs for multi-secret/SNI mode. Supports `tpl`. | `[]` |
 
-### 🔭 Metrics & Observability (NEW in v0.2.2)
-
-> When `metrics.enabled: true`, the chart additionally exposes a **`metrics` containerPort** on the Pod and renders a dedicated **`<release>-metrics` ClusterIP Service on port 9211**. ServiceMonitor and PrometheusRule are opt-in on top of that.
+### Metrics and observability
 
 | Parameter | Description | Default |
 |---|---|---|
-| `metrics.enabled` | Master switch for the entire metrics stack. | `false` |
-| `metrics.metricsPort` | Container port that exposes `/metrics`. Supports `tpl`. | **Required if enabled** |
-| `metrics.path` | Path served by your `/metrics` handler (forwarded to ServiceMonitor). | `nil` |
-| `metrics.labels` | Extra labels merged onto the metrics Service, ServiceMonitor and PrometheusRule. | `{}` |
-| `metrics.serviceMonitor.enabled` | Render a `ServiceMonitor` (requires Prometheus Operator). | `false` |
+| `metrics.enabled` | Master switch for the metrics stack. | `false` |
+| `metrics.metricsPort` | Container port exposing `/metrics`. Supports `tpl`. | Required if enabled |
+| `metrics.path` | Path served by the metrics endpoint. | `nil` |
+| `metrics.labels` | Extra labels for metrics resources. | `{}` |
+| `metrics.serviceMonitor.enabled` | Render a `ServiceMonitor`. | `false` |
 | `metrics.serviceMonitor.interval` | Scrape interval. | `30s` |
 | `metrics.serviceMonitor.scrapeTimeout` | Scrape timeout. | `10s` |
 | `metrics.serviceMonitor.scheme` | `http` or `https`. | `http` |
-| `metrics.serviceMonitor.honorLabels` | Honor labels reported by the target. | `nil` |
-| `metrics.serviceMonitor.relabelings` | Standard Prometheus relabel rules (`tpl`-aware). | `nil` |
-| `metrics.serviceMonitor.metricRelabelings` | Per-metric relabel rules (`tpl`-aware). | `nil` |
-| `metrics.prometheusRule.rules` | Alert and/or recording rules. Omit or pass `[]` to skip the resource. | `[]` |
+| `metrics.serviceMonitor.honorLabels` | Honor target-provided labels. | `nil` |
+| `metrics.serviceMonitor.relabelings` | Prometheus relabel rules, with `tpl` support. | `nil` |
+| `metrics.serviceMonitor.metricRelabelings` | Metric relabel rules, with `tpl` support. | `nil` |
+| `metrics.prometheusRule.rules` | Alerting or recording rules. | `[]` |
 
 ### CronJob
 
 | Parameter | Description | Default |
 |---|---|---|
-| `cronJob.schedule` | Cron expression (e.g., `"*/5 * * * *"`). | **Required** |
-| `cronJob.concurrencyPolicy` | `Allow`, `Forbid`, `Replace`. | `nil` |
-| `cronJob.successfulJobsHistoryLimit` | Successful job history. | `nil` |
-| `cronJob.failedJobsHistoryLimit` | Failed job history. | `nil` |
-| `cronJob.suspend` | Suspend the CronJob. | `nil` |
+| `cronJob.schedule` | Cron expression. | Required |
+| `cronJob.concurrencyPolicy` | `Allow`, `Forbid`, or `Replace`. | `nil` |
+| `cronJob.successfulJobsHistoryLimit` | Successful job history retention. | `nil` |
+| `cronJob.failedJobsHistoryLimit` | Failed job history retention. | `nil` |
+| `cronJob.suspend` | Suspend execution. | `nil` |
 | `cronJob.startingDeadlineSeconds` | Deadline for missed schedules. | `nil` |
-| `cronJob.backoffLimit` | Retries before failing. | `nil` |
+| `cronJob.backoffLimit` | Retry count before failure. | `nil` |
 | `cronJob.activeDeadlineSeconds` | Job timeout. | `nil` |
-| `cronJob.ttlSecondsAfterFinished` | Cleanup after completion. | `nil` |
+| `cronJob.ttlSecondsAfterFinished` | Post-completion cleanup TTL. | `nil` |
 | `cronJob.restartPolicy` | `OnFailure` or `Never`. | `OnFailure` |
 | `cronJob.image.repository` | Container image repository. | `""` |
 | `cronJob.image.tag` | Container image tag. | `""` |
 | `cronJob.image.pullPolicy` | Image pull policy. | `IfNotPresent` |
-| `cronJob.imagePullSecrets` | List of image pull secrets. | `[]` |
-| `cronJob.env` | Environment variables. Supports `tpl`. | `{}` |
-| `cronJob.configMaps` | ConfigMaps to inject (`{name, required}`). | `[]` |
-| `cronJob.secrets` | Secrets to inject (`{name, required}`). | `[]` |
-| `cronJob.resources` | CPU/Memory requests and limits. | `cpu: 200m / memory: 256Mi` |
-| `cronJob.startupProbe` | Kubernetes Startup Probe. | `{}` |
-| `cronJob.livenessProbe` | Kubernetes Liveness Probe. | `{}` |
-| `cronJob.readinessProbe` | Kubernetes Readiness Probe. | `{}` |
-| `cronJob.labels` | Custom labels on CronJob metadata. | `{}` |
-| `cronJob.podAnnotations` | Custom annotations on Pod metadata. | `{}` |
+| `cronJob.imagePullSecrets` | Image pull secrets. | `[]` |
+| `cronJob.env` | Environment variables, with `tpl` support. | `{}` |
+| `cronJob.configMaps` | ConfigMaps to inject. | `[]` |
+| `cronJob.secrets` | Secrets to inject. | `[]` |
+| `cronJob.resources` | CPU and memory requests/limits. | `cpu: 200m / memory: 256Mi` |
+| `cronJob.startupProbe` | Startup probe definition. | `{}` |
+| `cronJob.livenessProbe` | Liveness probe definition. | `{}` |
+| `cronJob.readinessProbe` | Readiness probe definition. | `{}` |
+| `cronJob.labels` | Extra CronJob labels. | `{}` |
+| `cronJob.podAnnotations` | Extra Pod annotations. | `{}` |
 
-## 💡 Advanced Usage
+## Advanced Usage
 
-### 1. Dynamic Value Injection (`tpl`)
-
-Reference values from elsewhere in `values.yaml` or the Helm context directly inside environment variables, ports, labels, or relabel rules:
+### Dynamic value injection with `tpl`
 
 ```yaml
 shared:
-  commonSecret: "my-org-secret"
+  primaryHost: api.mydomain.com
   metricsPort: "9090"
 
 deployment:
   containerPort: 8080
   env:
     APP_INSTANCE: "{{ .Release.Name }}"
-    API_KEY_REF: "{{ .Values.shared.commonSecret }}"
+
+ingress:
+  rule:
+    host: "{{ .Values.shared.primaryHost }}"
+  tls:
+    enabled: true
+    secretName: "{{ .Release.Name }}-tls"
 
 metrics:
   enabled: true
   metricsPort: "{{ .Values.shared.metricsPort }}"
 ```
 
-### 2. Auto-Injected Metadata
+This keeps repeated values centralized while still letting the library render concrete manifests.
 
-Every workload (Deployment **and** CronJob) automatically receives these environment variables — useful for logs, traces, and self-reported metrics:
+### Auto-injected metadata
+
+Every workload receives metadata environment variables that are useful for logs, traces, and self-identification:
 
 | Variable | Source |
 |---|---|
@@ -322,10 +343,53 @@ Every workload (Deployment **and** CronJob) automatically receives these environ
 | `HELM_Namespace` | `.Release.Namespace` |
 | `K8S_Namespace` | Downward API (`metadata.namespace`) |
 
-### 3. Probes on CronJobs
+### Probes on CronJobs
 
-Yes — Kubernetes supports probes on CronJob pods, and `helm-serve` exposes all three (`startupProbe`, `livenessProbe`, `readinessProbe`) for both modes. Useful for long-running batch jobs that ship a `/healthz` endpoint or sidecar-style scheduled workers. See [`values-cronjob.yaml`](test/values-cronjob.yaml).
+`helm-serve` exposes `startupProbe`, `livenessProbe`, and `readinessProbe` for CronJob pods as well as Deployments. That is useful for long-running jobs, sidecar-style workers, and scheduled tasks that still need health semantics.
 
-# License
+## Upgrading from v0.2.2
+
+If you already use `helm-serve` v0.2.2, the upgrade is **backward compatible**. However, you can now **remove custom ingress template overrides** and use the built-in TLS support:
+
+### Before (v0.2.2 workaround)
+
+```yaml
+# Custom ingress template needed for HTTPS
+ingress:
+  enabled: true
+  className: nginx
+  rule:
+    host: api.mydomain.com
+# ...then you'd fork templates to add TLS block manually
+```
+
+### After (v0.2.3-beta1)
+
+```yaml
+# Built-in TLS support — no template fork needed
+ingress:
+  enabled: true
+  className: nginx
+  rule:
+    host: api.mydomain.com
+  tls:
+    enabled: true
+    secretName: my-tls-secret
+```
+
+**Use cases now natively supported:**
+
+- **Single domain + TLS**: Set `ingress.tls.secretName`; the chart auto-uses `ingress.rule.host`.
+- **Multiple domains + one cert (SAN)**: Use `ingress.tls.hosts: [api.example.com, www.example.com]` with `secretName`.
+- **SNI / per-domain certs**: Use `ingress.tls.secrets[]` for advanced setups.
+
+No migration code needed — old values still work, and you can gradually adopt the new TLS parameters.
+
+## License
 
 This project is licensed under the [Apache License 2.0](LICENSE.md).
+
+---
+
+**Made with ❤️ by Burak Tungut**  
+[GitHub](https://github.com/btungut) | [Email](mailto:buraktungut@gmail.com)
