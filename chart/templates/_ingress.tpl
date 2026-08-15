@@ -53,6 +53,9 @@ tls:
 {{- define "library.ingress" }}
 {{- $ing := .Values.ingress }}
 {{- if $ing.enabled }}
+{{- if eq ($ing.className | toString | lower | trim) "traefik" }}
+{{- include "library.traefik" $ }}
+{{- else }}
 {{- $templatePrefix := include "library.templatePrefix" $ }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -78,5 +81,6 @@ spec:
                 name: {{ include "library.service.name" $ }}
                 port:
                   name: "app"
+{{- end }}
 {{- end }}
 {{- end }}

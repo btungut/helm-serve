@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+#### Traefik CRD Mode
+
+`helm-serve` now supports **Traefik** as an alternative ingress path, selected by `ingress.className: traefik`. This replaces the hand-written Traefik templates teams had been maintaining per project.
+
+When active, the library renders [`Middleware`](https://doc.traefik.io/traefik/reference/routing-configuration/kubernetes/crd/http/middleware/) and [`IngressRoute`](https://doc.traefik.io/traefik/reference/routing-configuration/kubernetes/crd/http/ingressroute/) CRDs (`traefik.io/v1alpha1`) instead of a standard `Ingress`. The nginx path is unchanged.
+
+**Highlights:**
+
+- **Predictable naming** — resources render as `middleware-<fullname>-<name>` and `ingressroute-<fullname>-<name>`.
+- **Short-name middleware wiring** — routes reference middlewares by their short name; the chart expands them to the rendered full names. `{ name, namespace }` maps pass through for external middlewares.
+- **Pass-through specs with `tpl`** — middleware specs and route services accept any Traefik CRD field.
+- **Sensible defaults** — `entryPoints` defaults to `[web, websecure]`; routes without explicit `services` target the chart's own Service.
+
+**New parameters:** the top-level `traefik:` block (`traefik.middlewares[]`, `traefik.ingressRoutes[]`).
+
+**New example:** [`test/values-traefik.yaml`](test/values-traefik.yaml)
+
+**Postponed (TODO):** HTTP TLS (`spec.tls`: `secretName` / `certResolver` / `options`) and TCP routing (`IngressRouteTCP` with TLS passthrough).
+
 ## [0.2.3-beta1] – 2026-05-09
 
 ### Added

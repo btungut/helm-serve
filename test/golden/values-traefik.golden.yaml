@@ -1,0 +1,163 @@
+---
+# Source: testing-api/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: smoke-testing-api
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: "app"
+      name: "app"
+  selector:
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+---
+# Source: testing-api/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smoke-testing-api
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+spec:
+  revisionHistoryLimit: 0
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: testing-api
+      app.kubernetes.io/instance: smoke
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: testing-api
+        app.kubernetes.io/instance: smoke
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: app
+          image: "myrepo:latest"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HELM_Version
+              value: "0.0.0"
+            - name: HELM_AppVersion
+              value: ""
+            - name: HELM_Description
+              value: "testing-api"
+            - name: HELM_Namespace
+              value: "yorumjet-test-apps"
+            - name: K8S_Namespace
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - name: app
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 200m
+              memory: 256Mi
+---
+# Source: testing-api/templates/ingress.yaml
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ingressroute-smoke-testing-api-web
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+spec:
+  entryPoints:
+    - "web"
+    - "websecure"
+  routes:
+    - match: "Host(`api.mycompany.local`)"
+      kind: Rule
+      middlewares:
+        - name: "middleware-smoke-testing-api-secure-headers"
+        - name: "middleware-smoke-testing-api-app-context"
+      services:
+        - name: smoke-testing-api
+          port: 80
+---
+# Source: testing-api/templates/ingress.yaml
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ingressroute-smoke-testing-api-api
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+    exposure: internal
+  annotations:
+    description: internal api route
+spec:
+  entryPoints:
+    - "web"
+  routes:
+    - match: "Host(`api.mycompany.local`) && PathPrefix(`/api`)"
+      kind: Rule
+      priority: 10
+      middlewares:
+        - name: "middleware-smoke-testing-api-secure-headers"
+        - name: "shared-ratelimit"
+          namespace: "traefik-system"
+      services:
+        - name: 'smoke-grpc'
+          port: 9000
+          scheme: h2c
+---
+# Source: testing-api/templates/ingress.yaml
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: middleware-smoke-testing-api-secure-headers
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+spec:
+  headers:
+    customRequestHeaders:
+      X-Custom-Header: my-custom-header
+    customResponseHeaders:
+      X-Custom-Response-Header: my-custom-response-header
+    forceSTSHeader: true
+    sslRedirect: true
+    stsIncludeSubdomains: true
+    stsPreload: true
+    stsSeconds: 31536000
+---
+# Source: testing-api/templates/ingress.yaml
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: middleware-smoke-testing-api-app-context
+  labels:
+    helm.sh/chart: testing-api-0.0.0
+    app.kubernetes.io/name: testing-api
+    app.kubernetes.io/instance: smoke
+    app.kubernetes.io/managed-by: Helm
+spec:
+  headers:
+    customRequestHeaders:
+      X-Release-Name: 'smoke'

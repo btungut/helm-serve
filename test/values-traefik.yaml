@@ -1,0 +1,78 @@
+### Test fixture: Traefik CRD mode (`library.traefik`).
+### Activated by `ingress.className: "traefik"` — renders Middleware and
+### IngressRoute CRDs (traefik.io/v1alpha1) instead of a standard Ingress.
+
+shared:
+  host: "api.mycompany.local"
+
+deployment:
+  image:
+    repository: myrepo
+    tag: latest
+  containerPort: 8080
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: "traefik"
+
+traefik:
+  middlewares:
+    # Rendered as: middleware-<fullname>-secure-headers
+    - name: "secure-headers"
+      spec:
+        headers:
+          customRequestHeaders:
+            X-Custom-Header: "my-custom-header"
+          customResponseHeaders:
+            X-Custom-Response-Header: "my-custom-response-header"
+          sslRedirect: true
+          forceSTSHeader: true
+          stsSeconds: 31536000
+          stsIncludeSubdomains: true
+          stsPreload: true
+
+    # tpl support inside middleware spec
+    - name: "app-context"
+      spec:
+        headers:
+          customRequestHeaders:
+            X-Release-Name: "{{ .Release.Name }}"
+
+  ingressRoutes:
+    # Rendered as: ingressroute-<fullname>-web
+    - name: "web"
+      # entryPoints omitted → defaults to [web, websecure]
+      routes:
+        # Default backend: the chart's own Service (services omitted)
+        - match: "Host(`{{ .Values.shared.host }}`)"
+          middlewares:
+            # Short names → expanded to rendered full middleware names
+            - "secure-headers"
+            - "app-context"
+
+    # Rendered as: ingressroute-<fullname>-api
+    - name: "api"
+      entryPoints:
+        - web
+      labels:
+        exposure: internal
+      annotations:
+        description: "internal api route"
+      routes:
+        - match: "Host(`{{ .Values.shared.host }}`) && PathPrefix(`/api`)"
+          kind: Rule
+          priority: 10
+          middlewares:
+            - "secure-headers"
+            # Map form passes through for external/cross-namespace middlewares
+            - name: "shared-ratelimit"
+              namespace: "traefik-system"
+          services:
+            - name: "{{ .Release.Name }}-grpc"
+              port: 9000
+              scheme: h2c

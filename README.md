@@ -49,6 +49,7 @@ This is the practical difference between `0.2.2` and the current prerelease: you
 - **Deployment and CronJob modes** from the same library chart.
 - **Ingress, Service, and metrics resources** rendered only when enabled.
 - **Ingress TLS support** for single-host, multi-host, and multi-secret/SNI setups.
+- **Traefik CRD mode** (`Middleware` + `IngressRoute`, `traefik.io/v1alpha1`) selected by `ingress.className: traefik`, as an alternative to the standard Ingress.
 - **Prometheus-ready observability** with metrics `Service`, optional `ServiceMonitor`, and optional `PrometheusRule`.
 - **Probe support everywhere** with `startupProbe`, `livenessProbe`, and `readinessProbe` on both Deployments and CronJobs.
 - **`tpl`-aware values** across env vars, metrics configuration, relabelings, ingress hosts, and TLS secret names.
@@ -167,6 +168,41 @@ ingress:
 
 For SNI-style setups, switch from `hosts` to `secrets[]` and assign different certificates per host set.
 
+### Traefik CRD mode
+
+If your cluster ingress is Traefik, set `ingress.className: traefik` and the library renders Traefik CRDs (`Middleware` and `IngressRoute`, `traefik.io/v1alpha1`) instead of a standard `Ingress`. Teams on nginx keep the short standard Ingress — nothing changes for them.
+
+```yaml
+ingress:
+  enabled: true
+  className: traefik
+
+traefik:
+  middlewares:
+    # Rendered as: middleware-<release fullname>-secure-headers
+    - name: secure-headers
+      spec:
+        headers:
+          sslRedirect: true
+          forceSTSHeader: true
+          stsSeconds: 31536000
+
+  ingressRoutes:
+    # Rendered as: ingressroute-<release fullname>-web
+    - name: web
+      entryPoints: [web, websecure]   # optional, this is the default
+      routes:
+        - match: "Host(`{{ .Values.shared.host }}`)"
+          middlewares:
+            - secure-headers          # short name → expanded to the rendered full name
+          # services omitted → routes to this chart's own Service
+```
+
+- `middlewares[].spec` is pass-through with `tpl` support, so any Traefik middleware type (`headers`, `stripPrefix`, `rateLimit`, `forwardAuth`, ...) works.
+- Route middleware references accept either a short name (expanded to `middleware-<fullname>-<name>`) or a `{name, namespace}` map passed through as-is for external or cross-namespace middlewares.
+- `entryPoints` takes entry point **names** only; addresses (`:80`/`:443`) belong to the Traefik proxy's own configuration, not to the `IngressRoute`.
+- `ingress.enabled: false` disables everything; the class name is irrelevant in that case.
+
 ## Architecture and naming
 
 `helm-serve` intentionally keeps naming responsibility in the consumer chart.
@@ -190,6 +226,7 @@ The [test/](test/) directory is effectively a cookbook. Read the files in order 
 | [`values-full.yaml`](test/values-full.yaml) | Full surface | Labels, annotations, probes, `templatePrefix`, `tpl`, ingress TLS, full metrics stack |
 | [`values-metrics.yaml`](test/values-metrics.yaml) | Observability | Dedicated walkthrough of the `metrics:` block |
 | [`values-ingress-tls.yaml`](test/values-ingress-tls.yaml) | HTTPS patterns | All supported ingress TLS modes, including cert-manager-friendly examples |
+| [`values-traefik.yaml`](test/values-traefik.yaml) | Traefik CRD mode | `Middleware` + `IngressRoute` rendering, short-name middleware wiring, default vs explicit backends |
 | [`values-cronjob.yaml`](test/values-cronjob.yaml) | Scheduled workloads | CronJob mode with execution policy and probe examples |
 
 ## Workload mode detection
@@ -248,7 +285,7 @@ Secondary resources such as `Service`, `Ingress`, and observability objects are 
 | Parameter | Description | Default |
 |---|---|---|
 | `ingress.enabled` | Enable Ingress creation. | `false` |
-| `ingress.className` | Ingress class name. | Required if enabled |
+| `ingress.className` | Ingress class name. Set to `traefik` to switch into Traefik CRD mode (see below). | Required if enabled |
 | `ingress.annotations` | Ingress annotations. | `{}` |
 | `ingress.rule.host` | Primary host. | Required if enabled |
 | `ingress.rule.path` | Request path. | Required if enabled |
@@ -257,6 +294,24 @@ Secondary resources such as `Service`, `Ingress`, and observability objects are 
 | `ingress.tls.secretName` | Secret name for auto or multi-host single-secret mode. Supports `tpl`. | Required when TLS is enabled and `secrets[]` is not used |
 | `ingress.tls.hosts` | Explicit host list for single-secret mode. Supports `tpl`. | Defaults to `[ingress.rule.host]` |
 | `ingress.tls.secrets` | List of `{ hosts, secretName }` pairs for multi-secret/SNI mode. Supports `tpl`. | `[]` |
+
+### Traefik CRD mode
+
+Active when `ingress.enabled: true` and `ingress.className: traefik`. The standard `Ingress` fields (`rule`, `tls`, `annotations`) are ignored in this mode.
+
+| Parameter | Description | Default |
+|---|---|---|
+| `traefik.middlewares` | List of `{ name, spec }` Middleware CRDs. Rendered as `middleware-<fullname>-<name>`. `spec` is pass-through with `tpl`. | `[]` |
+| `traefik.middlewares[].labels` | Extra Middleware labels. | `{}` |
+| `traefik.ingressRoutes` | List of IngressRoute CRDs. Rendered as `ingressroute-<fullname>-<name>`. | `[]` |
+| `traefik.ingressRoutes[].entryPoints` | Entry point names (no addresses). | `[web, websecure]` |
+| `traefik.ingressRoutes[].labels` | Extra IngressRoute labels. | `{}` |
+| `traefik.ingressRoutes[].annotations` | Extra IngressRoute annotations. Supports `tpl`. | `{}` |
+| `traefik.ingressRoutes[].routes[].match` | Traefik router rule. Supports `tpl`. | Required |
+| `traefik.ingressRoutes[].routes[].kind` | Router kind. | `Rule` |
+| `traefik.ingressRoutes[].routes[].priority` | Router priority. | `nil` |
+| `traefik.ingressRoutes[].routes[].middlewares` | Short names of `traefik.middlewares[]` entries (expanded to rendered names) or `{ name, namespace }` maps passed through as-is. | `[]` |
+| `traefik.ingressRoutes[].routes[].services` | Backend services, pass-through with `tpl`. | The chart's own Service |
 
 ### Metrics and observability
 
@@ -384,6 +439,11 @@ ingress:
 - **SNI / per-domain certs**: Use `ingress.tls.secrets[]` for advanced setups.
 
 No migration code needed — old values still work, and you can gradually adopt the new TLS parameters.
+
+## Roadmap / TODO
+
+- **Traefik HTTP TLS** — `spec.tls` (`secretName`, `certResolver`, `options`) on IngressRoute.
+- **Traefik TCP routing** — `IngressRouteTCP` support including TLS passthrough (deliberately postponed).
 
 ## License
 

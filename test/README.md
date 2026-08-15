@@ -11,6 +11,7 @@ This directory contains example `values-*.yaml` files that demonstrate every sup
 | `values-full.yaml` | Full surface | Labels, annotations, probes, `templatePrefix`, `tpl`, ingress TLS, full metrics stack |
 | `values-metrics.yaml` | Observability | Dedicated walkthrough of the `metrics:` block |
 | `values-ingress-tls.yaml` | HTTPS patterns | All supported ingress TLS modes, including cert-manager-friendly examples |
+| `values-traefik.yaml` | Traefik CRD mode | `Middleware` + `IngressRoute` rendering, short-name middleware wiring, default vs explicit backends |
 | `values-cronjob.yaml` | Scheduled workloads | CronJob mode with execution policy and probe examples |
 
 ## Testing and Validation
