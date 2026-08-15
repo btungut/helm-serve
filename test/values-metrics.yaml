@@ -79,8 +79,9 @@ metrics:
         action: drop
 
   ### ── PrometheusRule (Prometheus Operator CRD) ─────────────────────────
-  ### Provide alert and/or recording rules. Omit this block (or pass an
-  ### empty `rules` list) to skip the PrometheusRule resource entirely.
+  ### Rendered together with the ServiceMonitor whenever
+  ### `serviceMonitor.enabled` is true. Provide alert and/or recording
+  ### rules below; an empty list renders an empty rule group.
   prometheusRule:
     rules:
       ### Alerting rule

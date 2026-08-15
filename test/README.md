@@ -1,6 +1,29 @@
 # Test Fixtures for helm-serve
 
-This directory contains example `values-*.yaml` files that demonstrate every supported feature of the library. Each file is self-documenting with inline comments.
+This directory is both a **test harness** and a **cookbook**: a minimal consumer chart (`testing-api`) that depends on the library via `file://../chart`, plus a set of self-documenting `values-*.yaml` examples that exercise every supported feature of `helm-serve`.
+
+These fixtures also demonstrate the project's intended boundary: the application owns its Docker image, while `helm-serve` owns the reusable Kubernetes runtime configuration around that image. The examples are therefore values for rendering manifests, not Dockerfiles or image-build recipes.
+
+## How the harness is wired
+
+```
+test/
+├── Chart.yaml                    # application chart; depends on helm-serve via file://../chart
+├── Chart.lock                    # locked dependency metadata
+├── charts/                       # vendored library (helm dependency update)
+├── templates/
+│   ├── deployment.yaml           # {{- include "library.deployment" . }}
+│   ├── cronJob.yaml              # {{- include "library.cronJob" . }}
+│   ├── service.yaml              # {{- include "library.service" . }}
+│   ├── ingress.yaml              # {{- include "library.ingress" . }}
+│   ├── _helpers.tpl              # testing-api.* helpers (default templatePrefix)
+│   └── _helpers_overriden_tpl.tpl# overriden-tpl-prefix.* helpers (templatePrefix override tests)
+├── values-*.yaml                 # example configurations (see below)
+├── golden/                       # expected render output per values file
+└── validate.sh                   # golden-file regression suite
+```
+
+The workload templates are intentionally one-liners — exactly how a real consumer chart calls the library. The two `_helpers` files provide the naming helpers the library requires (`<prefix>.fullname`, `<prefix>.labels`, `<prefix>.selectorLabels`): `testing-api.*` covers the default prefix derived from the chart name, while `overriden-tpl-prefix.*` is exercised by `values-full.yaml` through `templatePrefix: "overriden-tpl-prefix"`.
 
 ## Files
 
@@ -15,6 +38,14 @@ This directory contains example `values-*.yaml` files that demonstrate every sup
 | `values-cronjob.yaml` | Scheduled workloads | CronJob mode with execution policy and probe examples |
 
 ## Testing and Validation
+
+### Refreshing the vendored library
+
+After changing anything under `../chart`, update the vendored dependency so renders pick it up:
+
+```bash
+helm dependency update .
+```
 
 ### Rendering Templates
 
@@ -68,7 +99,7 @@ To test `helm-serve` as a dependency in your application chart:
 dependencies:
   - name: helm-serve
     repository: oci://ghcr.io/btungut
-    version: 0.2.3-beta1
+    version: 0.2.3-beta2
 ```
 
 2. Copy one of the `values-*.yaml` examples as your starting point.
@@ -86,7 +117,8 @@ When adding features or fixing bugs, include an example `values-*.yaml` that dem
 
 1. Create `test/values-descriptive-name.yaml` with your example.
 2. Document it inline with comments.
-3. Run `./validate.sh --update` to generate the golden output.
-4. Commit both files as part of your PR.
+3. Run `helm dependency update .` so the harness uses your local library changes.
+4. Run `./validate.sh --update` to generate the golden output.
+5. Commit both files as part of your PR.
 
 This ensures regression tests cover new functionality from day one.

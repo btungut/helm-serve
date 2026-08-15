@@ -6,7 +6,7 @@
   Keep the structure consistent across releases.
 -->
 
-# helm-serve v0.2.3-beta1
+# helm-serve v0.2.3-beta2
 
 **A Helm library chart for shipping stateless services, scheduled jobs, observability, and ingress TLS without repeating Kubernetes boilerplate.**
 
@@ -54,8 +54,8 @@ See the full [Configuration Reference](https://github.com/btungut/helm-serve#con
 
 ## 📚 New Examples
 
-- **[test/values-ingress-tls.yaml](https://github.com/btungut/helm-serve/blob/release/v0.2.3-beta1/test/values-ingress-tls.yaml)** — All three TLS modes with cert-manager integration examples.
-- **Updated [test/values-full.yaml](https://github.com/btungut/helm-serve/blob/release/v0.2.3-beta1/test/values-full.yaml)** — Now includes comprehensive ingress TLS documentation.
+- **[test/values-ingress-tls.yaml](https://github.com/btungut/helm-serve/blob/release/v0.2.3-beta2/test/values-ingress-tls.yaml)** — All three TLS modes with cert-manager integration examples.
+- **Updated [test/values-full.yaml](https://github.com/btungut/helm-serve/blob/release/v0.2.3-beta2/test/values-full.yaml)** — Now includes comprehensive ingress TLS documentation.
 
 ## ♻️ Backward Compatibility
 
@@ -67,7 +67,7 @@ This release is **fully backward compatible** with v0.2.2. All observability fea
 dependencies:
   - name: helm-serve
     repository: oci://ghcr.io/btungut
-    version: 0.2.3-beta1
+    version: 0.2.3-beta2
 ```
 
 Then run:

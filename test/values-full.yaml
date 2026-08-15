@@ -198,8 +198,8 @@ ingress:
 ###                              the `metrics` containerPort
 ###   3. ServiceMonitor (CRD)  – created when `metrics.serviceMonitor.enabled`
 ###                              is true; selects the metrics Service
-###   4. PrometheusRule (CRD)  – created when rules are provided under
-###                              `metrics.prometheusRule.rules`
+###   4. PrometheusRule (CRD)  – rendered together with the ServiceMonitor;
+###                              rules come from `metrics.prometheusRule.rules`
 ###
 ### NOTE: ServiceMonitor & PrometheusRule require the Prometheus Operator
 ###       (kube-prometheus-stack) to be installed in the cluster.
@@ -250,8 +250,9 @@ metrics:
 
   prometheusRule:
 
-    ### Provide one or more rules (alerts / recording rules) to render a
-    ### PrometheusRule CR. Pass an empty list to skip the resource.
+    ### The PrometheusRule CR is rendered together with the ServiceMonitor;
+    ### the rules below become its rule group. An empty list renders an
+    ### empty group.
     rules:
       - alert: "{{ .Release.Name }}HighErrorRate"
         expr: 'sum(rate(http_requests_total{status=~"5.."}[5m])) > 0.05'
